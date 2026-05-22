@@ -1,0 +1,16 @@
+# raw market data, licensed from Databento, do not redistribute
+data/
+*.dbn.zst
+
+# derived data and caches
+*.parquet
+*.npz
+__pycache__/
+*.pyc
+
+# other research not part of this paper
+btc/
+
+# os and editor cruft
+.DS_Store
+Thumbs.db
