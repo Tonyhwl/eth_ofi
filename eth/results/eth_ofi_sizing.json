@@ -1,0 +1,386 @@
+{
+  "fixed_1_1-tick": {
+    "config": {
+      "signal_bars": 5,
+      "entry_threshold": 1.0,
+      "max_hold_bars": 3,
+      "direction_sign": 1,
+      "zscore_lookback": 200,
+      "capital": 1000000.0,
+      "vol_target": 0.15,
+      "vol_lookback": 200,
+      "spread_ticks": 1
+    },
+    "metrics": {
+      "sharpe": 2.322,
+      "cagr_pct": 13.13,
+      "ann_arith_pct": 14.28,
+      "ann_vol_pct": 6.15,
+      "total_net": 331252.0,
+      "total_return_pct": 33.13,
+      "max_dd_dollar": -38795.0,
+      "max_dd_pct": -3.88,
+      "sortino": 2.216,
+      "calmar": 3.385,
+      "pct_underwater": 96.7,
+      "n_bars": 25575,
+      "eff_years": 2.32
+    },
+    "sign_flip": {
+      "z": 3.58,
+      "p": 0.0003
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "n_bars": 6313,
+        "net": 158878.0,
+        "ret_pct": 15.89,
+        "ann_vol_pct": 6.24,
+        "sharpe": 2.55,
+        "max_dd_pct": -2.8
+      },
+      {
+        "year": 2025,
+        "n_bars": 14994,
+        "net": 153002.0,
+        "ret_pct": 15.3,
+        "ann_vol_pct": 6.5,
+        "sharpe": 2.36,
+        "max_dd_pct": -3.88
+      },
+      {
+        "year": 2026,
+        "n_bars": 4268,
+        "net": 19372.0,
+        "ret_pct": 1.94,
+        "ann_vol_pct": 4.62,
+        "sharpe": 1.32,
+        "max_dd_pct": -2.64
+      }
+    ],
+    "n_trades": 4406,
+    "avg_contracts": 1.0,
+    "median_contracts": 1.0
+  },
+  "fixed_4_1-tick": {
+    "config": {
+      "signal_bars": 5,
+      "entry_threshold": 1.0,
+      "max_hold_bars": 3,
+      "direction_sign": 1,
+      "zscore_lookback": 200,
+      "capital": 1000000.0,
+      "vol_target": 0.15,
+      "vol_lookback": 200,
+      "spread_ticks": 1
+    },
+    "metrics": {
+      "sharpe": 2.322,
+      "cagr_pct": 43.88,
+      "ann_arith_pct": 57.14,
+      "ann_vol_pct": 24.61,
+      "total_net": 1325010.0,
+      "total_return_pct": 132.5,
+      "max_dd_dollar": -155180.0,
+      "max_dd_pct": -15.52,
+      "sortino": 2.216,
+      "calmar": 2.828,
+      "pct_underwater": 96.7,
+      "n_bars": 25575,
+      "eff_years": 2.32
+    },
+    "sign_flip": {
+      "z": 3.58,
+      "p": 0.0003
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "n_bars": 6313,
+        "net": 635510.0,
+        "ret_pct": 63.55,
+        "ann_vol_pct": 24.94,
+        "sharpe": 2.55,
+        "max_dd_pct": -11.19
+      },
+      {
+        "year": 2025,
+        "n_bars": 14994,
+        "net": 612010.0,
+        "ret_pct": 61.2,
+        "ann_vol_pct": 26.01,
+        "sharpe": 2.36,
+        "max_dd_pct": -15.52
+      },
+      {
+        "year": 2026,
+        "n_bars": 4268,
+        "net": 77490.0,
+        "ret_pct": 7.75,
+        "ann_vol_pct": 18.47,
+        "sharpe": 1.32,
+        "max_dd_pct": -10.57
+      }
+    ],
+    "n_trades": 4406,
+    "avg_contracts": 4.0,
+    "median_contracts": 4.0
+  },
+  "vol_target_1-tick": {
+    "config": {
+      "signal_bars": 5,
+      "entry_threshold": 1.0,
+      "max_hold_bars": 3,
+      "direction_sign": 1,
+      "zscore_lookback": 200,
+      "capital": 1000000.0,
+      "vol_target": 0.15,
+      "vol_lookback": 200,
+      "spread_ticks": 1
+    },
+    "metrics": {
+      "sharpe": 2.141,
+      "cagr_pct": 23.39,
+      "ann_arith_pct": 27.08,
+      "ann_vol_pct": 12.65,
+      "total_net": 628062.0,
+      "total_return_pct": 62.81,
+      "max_dd_dollar": -89535.0,
+      "max_dd_pct": -8.95,
+      "sortino": 2.068,
+      "calmar": 2.612,
+      "pct_underwater": 96.7,
+      "n_bars": 25575,
+      "eff_years": 2.32
+    },
+    "sign_flip": {
+      "z": 3.28,
+      "p": 0.0003
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "n_bars": 6313,
+        "net": 261112.0,
+        "ret_pct": 26.11,
+        "ann_vol_pct": 9.72,
+        "sharpe": 2.69,
+        "max_dd_pct": -4.38
+      },
+      {
+        "year": 2025,
+        "n_bars": 14994,
+        "net": 329015.0,
+        "ret_pct": 32.9,
+        "ann_vol_pct": 14.86,
+        "sharpe": 2.22,
+        "max_dd_pct": -8.95
+      },
+      {
+        "year": 2026,
+        "n_bars": 4268,
+        "net": 37935.0,
+        "ret_pct": 3.79,
+        "ann_vol_pct": 13.33,
+        "sharpe": 0.9,
+        "max_dd_pct": -7.23
+      }
+    ],
+    "n_trades": 4464,
+    "avg_contracts": 2.25,
+    "median_contracts": 2.3
+  },
+  "fixed_1_2-tick_stress": {
+    "config": {
+      "signal_bars": 5,
+      "entry_threshold": 1.0,
+      "max_hold_bars": 3,
+      "direction_sign": 1,
+      "zscore_lookback": 200,
+      "capital": 1000000.0,
+      "vol_target": 0.15,
+      "vol_lookback": 200,
+      "spread_ticks": 2
+    },
+    "metrics": {
+      "sharpe": 2.244,
+      "cagr_pct": 12.72,
+      "ann_arith_pct": 13.81,
+      "ann_vol_pct": 6.15,
+      "total_net": 320142.0,
+      "total_return_pct": 32.01,
+      "max_dd_dollar": -39015.0,
+      "max_dd_pct": -3.9,
+      "sortino": 2.143,
+      "calmar": 3.261,
+      "pct_underwater": 96.8,
+      "n_bars": 25575,
+      "eff_years": 2.32
+    },
+    "sign_flip": {
+      "z": 3.46,
+      "p": 0.0003
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "n_bars": 6313,
+        "net": 155880.0,
+        "ret_pct": 15.59,
+        "ann_vol_pct": 6.24,
+        "sharpe": 2.5,
+        "max_dd_pct": -2.85
+      },
+      {
+        "year": 2025,
+        "n_bars": 14994,
+        "net": 146692.0,
+        "ret_pct": 14.67,
+        "ann_vol_pct": 6.5,
+        "sharpe": 2.26,
+        "max_dd_pct": -3.9
+      },
+      {
+        "year": 2026,
+        "n_bars": 4268,
+        "net": 17570.0,
+        "ret_pct": 1.76,
+        "ann_vol_pct": 4.62,
+        "sharpe": 1.2,
+        "max_dd_pct": -2.7
+      }
+    ],
+    "n_trades": 4406,
+    "avg_contracts": 1.0,
+    "median_contracts": 1.0
+  },
+  "fixed_4_2-tick_stress": {
+    "config": {
+      "signal_bars": 5,
+      "entry_threshold": 1.0,
+      "max_hold_bars": 3,
+      "direction_sign": 1,
+      "zscore_lookback": 200,
+      "capital": 1000000.0,
+      "vol_target": 0.15,
+      "vol_lookback": 200,
+      "spread_ticks": 2
+    },
+    "metrics": {
+      "sharpe": 2.244,
+      "cagr_pct": 42.69,
+      "ann_arith_pct": 55.22,
+      "ann_vol_pct": 24.61,
+      "total_net": 1280570.0,
+      "total_return_pct": 128.06,
+      "max_dd_dollar": -156060.0,
+      "max_dd_pct": -15.61,
+      "sortino": 2.143,
+      "calmar": 2.736,
+      "pct_underwater": 96.8,
+      "n_bars": 25575,
+      "eff_years": 2.32
+    },
+    "sign_flip": {
+      "z": 3.46,
+      "p": 0.0003
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "n_bars": 6313,
+        "net": 623520.0,
+        "ret_pct": 62.35,
+        "ann_vol_pct": 24.95,
+        "sharpe": 2.5,
+        "max_dd_pct": -11.41
+      },
+      {
+        "year": 2025,
+        "n_bars": 14994,
+        "net": 586770.0,
+        "ret_pct": 58.68,
+        "ann_vol_pct": 26.01,
+        "sharpe": 2.26,
+        "max_dd_pct": -15.61
+      },
+      {
+        "year": 2026,
+        "n_bars": 4268,
+        "net": 70280.0,
+        "ret_pct": 7.03,
+        "ann_vol_pct": 18.48,
+        "sharpe": 1.2,
+        "max_dd_pct": -10.81
+      }
+    ],
+    "n_trades": 4406,
+    "avg_contracts": 4.0,
+    "median_contracts": 4.0
+  },
+  "vol_target_2-tick_stress": {
+    "config": {
+      "signal_bars": 5,
+      "entry_threshold": 1.0,
+      "max_hold_bars": 3,
+      "direction_sign": 1,
+      "zscore_lookback": 200,
+      "capital": 1000000.0,
+      "vol_target": 0.15,
+      "vol_lookback": 200,
+      "spread_ticks": 2
+    },
+    "metrics": {
+      "sharpe": 2.055,
+      "cagr_pct": 22.56,
+      "ann_arith_pct": 25.99,
+      "ann_vol_pct": 12.65,
+      "total_net": 602788.0,
+      "total_return_pct": 60.28,
+      "max_dd_dollar": -90870.0,
+      "max_dd_pct": -9.09,
+      "sortino": 1.986,
+      "calmar": 2.483,
+      "pct_underwater": 96.8,
+      "n_bars": 25575,
+      "eff_years": 2.32
+    },
+    "sign_flip": {
+      "z": 3.15,
+      "p": 0.0007
+    },
+    "yearly": [
+      {
+        "year": 2024,
+        "n_bars": 6313,
+        "net": 256262.0,
+        "ret_pct": 25.63,
+        "ann_vol_pct": 9.73,
+        "sharpe": 2.64,
+        "max_dd_pct": -4.48
+      },
+      {
+        "year": 2025,
+        "n_bars": 14994,
+        "net": 313880.0,
+        "ret_pct": 31.39,
+        "ann_vol_pct": 14.86,
+        "sharpe": 2.12,
+        "max_dd_pct": -9.09
+      },
+      {
+        "year": 2026,
+        "n_bars": 4268,
+        "net": 32645.0,
+        "ret_pct": 3.26,
+        "ann_vol_pct": 13.33,
+        "sharpe": 0.77,
+        "max_dd_pct": -7.53
+      }
+    ],
+    "n_trades": 4464,
+    "avg_contracts": 2.25,
+    "median_contracts": 2.3
+  }
+}
