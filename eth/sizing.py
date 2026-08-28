@@ -1,5 +1,6 @@
-# ETH OFI sizing comparison: fixed 1, fixed 4, vol-target on $1M
-# locked config: signal_bars=5, entry_threshold=1.0, max_hold_bars=3, zlb=200
+# ETH OFI sizing comparison: fixed 1, fixed 4, vol-target on $1M.
+# uses the locked signal parameters but NO clock cap, so these metrics are the
+# bare no-cap variant, not the paper headline.
 
 import math, json
 from pathlib import Path
@@ -26,9 +27,6 @@ panel_path = root / "results" / "eth_ofi_vbars_isfix.parquet"
 def load_panel():
     df = pd.read_parquet(panel_path).sort_index()
     df["roll"] = (df["front_sym"] != df["front_sym"].shift(1)).fillna(True)
-    if "d_mid" not in df.columns:
-        df["d_mid"] = df["mid_close"].diff()
-        df.loc[df["roll"], "d_mid"] = np.nan
     years = (df.index.max() - df.index.min()).total_seconds() / (365.25 * 86400)
     bars_per_year = len(df) / years
     return df, bars_per_year
@@ -192,8 +190,9 @@ def main():
     print(f"Volume bars: {len(df):,}  bars/yr: {bars_per_year:.0f}")
     print(f"OOS slice  : {len(df_oos):,} bars   {df_oos.index.min().date()} -> {df_oos.index.max().date()}")
     print(f"Capital    : ${capital:,.0f}   vol target: {vol_target*100:.0f}%")
-    print(f"Locked cfg : signal_bars={signal_bars} entry={entry_threshold} "
-          f"max_hold={max_hold_bars} direction={direction_sign:+d} zlb={zscore_lookback}\n")
+    print(f"Config     : signal_bars={signal_bars} entry={entry_threshold} "
+          f"max_hold={max_hold_bars} direction={direction_sign:+d} zlb={zscore_lookback} "
+          f"(locked params, no clock cap)\n")
 
     modes = ["fixed_1", "fixed_4", "vol_target"]
     cost_modes = [(1, "1-tick"), (2, "2-tick stress")]
@@ -240,7 +239,7 @@ def main():
     if headline_key in summary:
         headline = summary[headline_key]
         print(f"\n{'='*72}")
-        print(f"  headline: vol_target sizing, 1-tick spread, $1M capital")
+        print(f"  vol_target sizing, 1-tick spread, $1M capital (no-cap variant, not the paper headline)")
         print(f"{'='*72}")
         print(f"  {'Year':<6}{'Bars':>7}{'Net $':>14}{'Ret%':>9}{'Vol%':>8}{'Sharpe':>9}{'MaxDD%':>10}")
         for row in headline["yearly"]:

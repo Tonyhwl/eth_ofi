@@ -1,5 +1,4 @@
 # plot signal decay profile (0.5 min to 24 h).
-# placebo column is loaded for the robustness check but not plotted here.
 
 from pathlib import Path
 
@@ -9,7 +8,7 @@ import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parent
 
-ink, off = "#0f1d2e", "#5a6878"
+ink = "#0f1d2e"
 acc1, acc2, acc3 = "#1f6feb", "#c6502c", "#0e8a6f"
 grid_col, bg = "#dfe3e8", "#fbfbfd"
 mpl.rcParams.update({

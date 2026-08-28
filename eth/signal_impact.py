@@ -35,11 +35,14 @@ def newey_west_se(X, resid, lags):
 
 
 def run_regression(df, label, lags=5):
-    df = df.dropna(subset=["ofi", "d_mid"]).copy()
-    df = df[np.isfinite(df["ofi"]) & np.isfinite(df["d_mid"])]
+    # lag built before dropping rows, so post-roll bars get the true previous bar's ofi
+    df = df.copy()
+    df["ofi_lag1"] = df["ofi"].shift(1)
+    df = df.dropna(subset=["ofi", "d_mid", "ofi_lag1"])
+    df = df[np.isfinite(df["ofi"]) & np.isfinite(df["d_mid"]) & np.isfinite(df["ofi_lag1"])]
     y = df["d_mid"].values
     ofi = df["ofi"].values
-    ofi_lag1 = np.roll(ofi, 1); ofi_lag1[0] = 0.0
+    ofi_lag1 = df["ofi_lag1"].values
     X = np.column_stack([np.ones(len(y)), ofi, ofi_lag1])
     beta, *_ = np.linalg.lstsq(X, y, rcond=None)
     resid = y - X @ beta
@@ -67,10 +70,8 @@ def main():
             df = df.set_index("ts")
     if df.index.tz is None:
         df.index = df.index.tz_localize("UTC").tz_convert("US/Eastern")
-    elif df.index.tz != "US/Eastern":
+    elif str(df.index.tz) != "US/Eastern":
         df.index = df.index.tz_convert("US/Eastern")
-    if "d_mid" not in df.columns:
-        df["d_mid"] = df["mid_close"].diff()
 
     print("=" * 72)
     print("ETH OFI signal-impact regression  (Cont-Kukanov-Stoikov 2014 style)")

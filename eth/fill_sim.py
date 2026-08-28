@@ -1,10 +1,5 @@
-# empirical fill simulation using raw TBBO under three execution variants:
-#   aggressive: market order at the bar boundary, walks the book using
-#               top-of-book size as a level-depth proxy
-#   passive:    limit at the touch with a 60s queue window; only filled if
-#               a trade prints at our price within the window
-#   staggered:  split the position into 5 child orders one minute apart,
-#               each filled aggressively at its own arrival
+# empirical fill simulation from raw TBBO under three execution variants:
+# aggressive (walk the book), passive (rest at touch, 60s queue), staggered (5 child orders).
 
 import sys, math, re
 from collections import defaultdict
@@ -68,7 +63,7 @@ def load_tbbo_day(date_obj):
     ask_size = sub["ask_sz_00"].astype(float).values
     is_trade = (sub.get("action", pd.Series(["N"]*len(sub))).astype(str).values == "T")
     side     = sub.get("side", pd.Series(["N"]*len(sub))).astype(str).values
-    price    = sub.get("price", pd.Series(np.nan*len(sub))).astype(float).values
+    price    = sub.get("price", pd.Series(np.full(len(sub), np.nan))).astype(float).values
     valid = np.isfinite(bid) & np.isfinite(ask) & (bid > 0) & (ask > bid)
     return pd.DataFrame({
         "bid": bid[valid], "ask": ask[valid], "bid_sz": bid_size[valid], "ask_sz": ask_size[valid],
@@ -77,7 +72,7 @@ def load_tbbo_day(date_obj):
 
 
 def aggressive_fill(tbbo, ts, direction, side, size):
-    """Market order that walks the book using top-of-book size as the per-level depth proxy."""
+    """Market order that walks the book, using top-of-book size as a depth proxy."""
     pos = tbbo.index.searchsorted(ts, side="right") - 1
     if pos < 0:
         return None
@@ -200,7 +195,6 @@ def main():
     print(f"\n  passive missed legs: {n_passive_missed:,}")
 
     def metrics(label, fill_dict):
-        bar_index = {ts: i for i, ts in enumerate(df.index)}
         pnl = np.zeros(len(df))
         n_used = 0
         for t in oos_trades:

@@ -34,7 +34,7 @@ paper.
 | Maximum drawdown             | $-2.8\%$          |
 | Annual volatility            | $6.9\%$           |
 | SPA p-value (1,920 trials)   | $< 0.001$         |
-| DSR p-value (1,920 trials)   | $0.958$           |
+| DSR, $P(SR>0)$ (1,920 trials)| $0.958$           |
 
 Signal-impact regression on bar mid-quote change: OOS slope on contemporaneous
 OFI is $\beta_0 = +0.249$ (Newey-West HAC $t = 52.8$, $R^2 = 0.32$). Forward
@@ -42,6 +42,23 @@ signed return from signal entry rises rapidly over the first 2 minutes
 ($\approx 4$ bp/min), peaks at +21.6 bp at 4 hours, and decays to $-9.4$ bp
 by 24 hours. The 10-minute cap is an IS-optimal vol-control parameter, not
 a signal-decay cutoff.
+
+## Robustness and honest caveats
+
+- **The edge depends on the 10-minute cap.** Without it the signal is a ~2.1
+  OOS Sharpe and *fails* the Deflated Sharpe Ratio on the 96-config grid in
+  `robust.py` (DSR = 0.29) — the in-sample pick is not distinguishable from
+  noise-mining. The cap (a searched vol-control parameter) lifts OOS Sharpe to
+  +5.11, and the capped strategy clears DSR over the full 1,920-config search
+  (DSR = 0.958). The cap works by trimming the high-variance tail of the hold,
+  not by lookahead.
+- **Net of fills is the honest headline.** +5.11 is frictionless of impact at
+  one tick/side; reconstructed TBBO fills give +3.77 (aggressive) / +3.49
+  (passive). The strategy holds ~10 minutes and turns over fast, so realistic
+  execution is the number that matters.
+- **The passive fill number is an upper bound.** Legs that do not fill within
+  60s are dropped from the passive PnL, and the misses are adversely selected
+  (they concentrate on legs that ran with the signal).
 
 ## Cost sensitivity
 
@@ -68,6 +85,8 @@ the touch gives $+3.49$ on the legs that fill.
 |-----------------------|---------------------------------------------------------------------------|
 | `panel.py`            | Build the per-minute OFI panel from the raw TBBO event stream             |
 | `strategy.py`         | Locked strategy: signal, state machine, PnL conventions                   |
+| `engine.py`           | Streaming one-bar-at-a-time engine (live-ready), mirrors `strategy.py`     |
+| `test_engine_golden.py` | Golden replay: asserts the engine reproduces the locked backtest exactly |
 | `robust.py`           | IS-only dollar-volume bars, then DSR / Hansen SPA / block bootstrap on the 96-config grid |
 | `joint_is.py`         | Full 1,920-config joint IS sweep with SPA and DSR                         |
 | `signal_impact.py`    | OLS of bar mid-quote change on OFI with Newey-West HAC SEs                |
@@ -76,11 +95,14 @@ the touch gives $+3.49$ on the legs that fill.
 | `cost_sensitivity.py` | OOS Sharpe under a flat per-side tick cost                                |
 | `cap_sensitivity.py`  | IS and OOS Sharpe across clock-cap lengths                                |
 | `fill_sim.py`         | Empirical fill simulation: aggressive / passive / staggered               |
-| `tick_fill_sim.py`    | Worst-case market-order tick-fill reference                               |
+| `walkforward.py`      | Rolling walk-forward re-selection (monthly + quarterly) with figures      |
+| `grid_sensitivity.py` | Walk-forward repeated under shifted and widened parameter grids           |
+| `minute_regression.py`| Signal-impact regression at minute resolution                             |
 | `capacity.py`         | Almgren-Chriss capacity sweep, $1M-$50M                                   |
-| `sizing.py`           | Fixed vs vol-target sizing comparison                                     |
+| `sizing.py`           | Fixed vs vol-target sizing comparison (no-cap variant)                    |
 | `placebo.py`          | Direction-shuffled placebo over 200 seeds                                 |
 | `plots.py`            | Paper figures: equity, yearly, trades, signal impact, cap sweep           |
+| `archive/tick_fill_sim.py` | Archived worst-case market-order tick-fill reference                |
 
 ## Run
 
@@ -93,15 +115,18 @@ python robust.py            # per-minute panel -> IS-fixed bars, then DSR / SPA 
 
 # Core analyses:
 python strategy.py          # locked strategy
+python test_engine_golden.py # verify the streaming engine reproduces the backtest exactly
 python signal_impact.py     # signal-impact regression
 python decay.py             # sub-bar to 24h signal decay
 python joint_is.py          # 1,920-config joint IS sweep + SPA + DSR
 python cost_sensitivity.py  # flat per-side cost sweep
 python cap_sensitivity.py   # clock-cap length sweep
 python fill_sim.py          # empirical fill sim (aggressive/passive/staggered)
-python tick_fill_sim.py     # worst-case tick-fill reference
+python walkforward.py       # rolling walk-forward re-selection + figures
+python grid_sensitivity.py  # walk-forward under shifted/widened grids
+python minute_regression.py # minute-resolution signal-impact regression
 python capacity.py          # capacity at scale
-python sizing.py            # fixed vs vol-target sizing
+python sizing.py            # fixed vs vol-target sizing (no-cap variant)
 python placebo.py           # direction-shuffled placebo
 
 # Figures:
@@ -145,6 +170,10 @@ Bar mid-quote change against contemporaneous OFI:
 Sharpe against clock-cap length:
 
 ![cap](figs/fig6_cap.png)
+
+Walk-forward OOS equity, re-optimised quarterly against the locked configuration:
+
+![walkforward](figs/fig_walkforward.png)
 
 ## References
 

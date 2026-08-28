@@ -71,6 +71,23 @@ class Trade:
         return (self.exit_time - self.entry_time).total_seconds() / 3600
 
 
+@dataclass
+class Position:
+    """Mutable open-position state for the simulation loop."""
+    direction:  int = 0     # +1 long, -1 short, 0 flat
+    size:       int = 0
+    bars_held:  int = 0
+    entry_time: pd.Timestamp = None
+    entry_idx:  int = None
+
+    def is_open(self):
+        return self.direction != 0
+
+    def reset(self):
+        self.direction = self.size = self.bars_held = 0
+        self.entry_time = self.entry_idx = None
+
+
 def _first_friday(year, month):
     date = pd.Timestamp(year=year, month=month, day=1)
     return date + pd.Timedelta(days=(4 - date.weekday()) % 7)
@@ -142,75 +159,69 @@ def simulate(df, n_contracts_series, use_event_filter, use_weekend_filter,
     n_bars        = len(df)
     cap_seconds   = cap_hours * 3600 if cap_hours is not None else None
 
-    trades        = []
-    pos_dir       = 0
-    pos_size      = 0
-    bars_held     = 0
-    entry_time    = None
-    entry_idx     = None
+    trades = []
+    pos    = Position()
+
+    def close(exit_idx, reason):
+        trades.append(Trade(pos.entry_time, pos.entry_idx, timestamps[exit_idx], exit_idx,
+                            pos.direction, pos.size, reason))
+        pos.reset()
+
     prev_contract = None
 
     for i in range(n_bars):
         ts      = timestamps[i]
         z_score = z_series[i]
 
-        cap_fired   = (pos_dir != 0 and cap_seconds is not None
-                       and entry_time is not None
-                       and (ts - entry_time).total_seconds() >= cap_seconds)
+        cap_fired   = (pos.is_open() and cap_seconds is not None
+                       and pos.entry_time is not None
+                       and (ts - pos.entry_time).total_seconds() >= cap_seconds)
         block_event = use_event_filter   and in_event_window(ts, events)
         force_flat  = use_weekend_filter and in_friday_window(ts, friday_force_flat_min)
         block_entry = block_event or (use_weekend_filter and in_friday_window(ts, friday_no_entry_min))
 
         if cap_fired:
-            trades.append(Trade(entry_time, entry_idx, ts, i, pos_dir, pos_size, "cap"))
-            pos_dir = 0; pos_size = 0; bars_held = 0; entry_time = None; entry_idx = None
+            close(i, "cap")
             prev_contract = contract_sym[i]; continue
 
-        if pos_dir != 0 and block_event:
-            trades.append(Trade(entry_time, entry_idx, ts, i, pos_dir, pos_size, "event"))
-            pos_dir = 0; pos_size = 0; bars_held = 0; entry_time = None; entry_idx = None
+        if pos.is_open() and block_event:
+            close(i, "event")
             prev_contract = contract_sym[i]; continue
 
-        if pos_dir != 0 and force_flat:
-            trades.append(Trade(entry_time, entry_idx, ts, i, pos_dir, pos_size, "weekend"))
-            pos_dir = 0; pos_size = 0; bars_held = 0; entry_time = None; entry_idx = None
+        if pos.is_open() and force_flat:
+            close(i, "weekend")
             prev_contract = contract_sym[i]; continue
 
-        if contract_sym[i] != prev_contract and prev_contract is not None and pos_dir != 0:
-            trades.append(Trade(entry_time, entry_idx, ts, i, pos_dir, pos_size, "roll"))
-            pos_dir = 0; pos_size = 0; bars_held = 0; entry_time = None; entry_idx = None
+        if contract_sym[i] != prev_contract and prev_contract is not None and pos.is_open():
+            close(i, "roll")
 
         if not np.isfinite(z_score):
             prev_contract = contract_sym[i]; continue
 
-        if pos_dir != 0 and bars_held >= max_hold_bars:
-            trades.append(Trade(entry_time, entry_idx, ts, i, pos_dir, pos_size, "hold"))
-            pos_dir = 0; pos_size = 0; bars_held = 0; entry_time = None; entry_idx = None
+        if pos.is_open() and pos.bars_held >= max_hold_bars:
+            close(i, "hold")
 
-        if pos_dir == +1 and z_score <= 0:
-            trades.append(Trade(entry_time, entry_idx, ts, i, pos_dir, pos_size, "zcross"))
-            pos_dir = 0; pos_size = 0; bars_held = 0; entry_time = None; entry_idx = None
-        elif pos_dir == -1 and z_score >= 0:
-            trades.append(Trade(entry_time, entry_idx, ts, i, pos_dir, pos_size, "zcross"))
-            pos_dir = 0; pos_size = 0; bars_held = 0; entry_time = None; entry_idx = None
+        if pos.direction == +1 and z_score <= 0:
+            close(i, "zcross")
+        elif pos.direction == -1 and z_score >= 0:
+            close(i, "zcross")
 
-        if pos_dir == 0 and not block_entry:
+        if not pos.is_open() and not block_entry:
             if z_score >= entry_threshold:
-                pos_dir = +1 * direction_sign
-                pos_size = max(1, int(round(contracts_arr[i])))
-                bars_held = 1; entry_time = ts; entry_idx = i
+                pos.direction = +1 * direction_sign
+                pos.size = max(1, int(round(contracts_arr[i])))
+                pos.bars_held = 1; pos.entry_time = ts; pos.entry_idx = i
             elif z_score <= -entry_threshold:
-                pos_dir = -1 * direction_sign
-                pos_size = max(1, int(round(contracts_arr[i])))
-                bars_held = 1; entry_time = ts; entry_idx = i
-        elif pos_dir != 0:
-            bars_held += 1
+                pos.direction = -1 * direction_sign
+                pos.size = max(1, int(round(contracts_arr[i])))
+                pos.bars_held = 1; pos.entry_time = ts; pos.entry_idx = i
+        elif pos.is_open():
+            pos.bars_held += 1
 
         prev_contract = contract_sym[i]
 
-    if pos_dir != 0:
-        trades.append(Trade(entry_time, entry_idx, timestamps[n_bars-1], n_bars-1,
-                            pos_dir, pos_size, "end"))
+    if pos.is_open():
+        close(n_bars - 1, "end")
     return trades
 
 

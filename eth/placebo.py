@@ -1,8 +1,5 @@
-# direction-shuffled placebo for the locked strategy. holds the locked
-# trade list fixed and permutes the long and short labels across 200
-# seeds, so each seed keeps every entry time, exit time and size but
-# reassigns the trade direction. this checks that the edge comes from
-# the ofi direction call and not from the trade timing.
+# direction-shuffled placebo: hold the locked trades fixed and permute the
+# long/short labels over 200 seeds, to test the edge is in the direction call.
 
 import sys
 from dataclasses import replace

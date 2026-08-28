@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 
 from strategy import (
     vol_target_contracts, pnl_from_trades, build_event_calendar,
-    oos_start, panel_path, contract_mult, Trade,
+    oos_start, panel_path, contract_mult, capital, Trade,
     event_pre_min, event_post_min,
     friday_no_entry_min, friday_force_flat_min, friday_close_hour,
     direction_sign,
@@ -74,6 +74,34 @@ def precompute_z(df, signal_bars, zlb):
     return ((cum_ofi - rolling_mean) / rolling_std).values
 
 
+def annualized_sortino(pnl, bpy):
+    """Annualised Sortino (downside-deviation) of a per-bar pnl array."""
+    p = pnl[np.isfinite(pnl)]
+    if len(p) < 30:
+        return np.nan
+    downside_dev = np.sqrt(np.mean(np.minimum(p, 0.0) ** 2))
+    if downside_dev == 0:
+        return np.nan
+    return float(p.mean() / downside_dev * np.sqrt(bpy))
+
+
+def calmar_ratio(pnl, bpy, capital):
+    """Calmar (CAGR over absolute max drawdown) of a per-bar dollar pnl array."""
+    p = pnl[np.isfinite(pnl)]
+    if len(p) < 30:
+        return np.nan
+    total = p.sum()
+    years = len(p) / bpy
+    if years <= 0 or total <= -capital:
+        return np.nan
+    cagr = (1 + total / capital) ** (1 / years) - 1
+    cumulative = np.cumsum(p)
+    max_dd = (cumulative - np.maximum.accumulate(cumulative)).min() / capital
+    if max_dd == 0:
+        return np.nan
+    return float(cagr / abs(max_dd))
+
+
 def fast_simulate(timestamps, z_series, contracts_arr, contract_sym, n_bars,
                   entry_z, max_hold, cap_secs,
                   event_mask, friday_flat_mask, friday_no_entry_mask,
@@ -115,7 +143,7 @@ def fast_simulate(timestamps, z_series, contracts_arr, contract_sym, n_bars,
             trades.append(Trade(entry_time, entry_index, ts, i, pos_dir, pos_size, "roll"))
             pos_dir = 0; pos_size = 0; bars_held = 0; entry_time = None; entry_index = None
 
-        if z != z:  # nan check
+        if not np.isfinite(z):
             prev_contract = contract_sym[i]; continue
 
         if pos_dir != 0 and bars_held >= max_hold:
@@ -197,6 +225,8 @@ def main():
     pnl_oos_cols = []
     sharpe_is_arr  = []
     sharpe_oos_arr = []
+    sortino_is_arr = []
+    calmar_is_arr  = []
     t0 = time.time()
     i = 0
 
@@ -222,6 +252,8 @@ def main():
                             pnl_norm = pnl / CAP_NORM
                             sharpe_is  = _annualized_sharpe(pnl_norm[is_index],  bars_per_year_is)
                             sharpe_oos = _annualized_sharpe(pnl_norm[oos_index], bars_per_year_oos)
+                            sortino_is = annualized_sortino(pnl_norm[is_index], bars_per_year_is)
+                            calmar_is  = calmar_ratio(pnl[is_index], bars_per_year_is, capital)
                             rows.append({
                                 "signal_bars": n_signal, "entry_z": ez,
                                 "max_hold": n_hold, "zlb": zlb,
@@ -230,9 +262,13 @@ def main():
                                 "n_trades": len(trades),
                                 "sr_is":  sharpe_is,
                                 "sr_oos": sharpe_oos,
+                                "sortino_is": sortino_is,
+                                "calmar_is":  calmar_is,
                             })
                             sharpe_is_arr.append(sharpe_is)
                             sharpe_oos_arr.append(sharpe_oos)
+                            sortino_is_arr.append(sortino_is)
+                            calmar_is_arr.append(calmar_is)
                             pnl_oos_cols.append(pnl_norm[oos_index])
                             if i % 50 == 0:
                                 elapsed = time.time() - t0
@@ -272,6 +308,23 @@ def main():
           f"cap_h = {best['cap_h']:.4f}", flush=True)
     print(f"  IS Sharpe = {best['sr_is']:+.3f}, OOS Sharpe = {best['sr_oos']:+.3f}", flush=True)
 
+    # IS-best by Sortino and by Calmar, to check the objective does not drive the pick
+    sortino_is_arr = np.asarray(sortino_is_arr)
+    calmar_is_arr  = np.asarray(calmar_is_arr)
+    alt_best = {}
+    for metric_name, metric_arr in [("Sortino", sortino_is_arr), ("Calmar", calmar_is_arr)]:
+        order = np.argsort(-np.where(np.isfinite(metric_arr), metric_arr, -np.inf))
+        bi = int(order[0])
+        r = df_out.iloc[bi]
+        agree = "same config as Sharpe-best" if bi == best_index else "different config"
+        alt_best[metric_name.lower()] = bi
+        print(f"\nBest IS config by {metric_name}: idx {bi}  ({agree})", flush=True)
+        print(f"  signal_bars={int(r.signal_bars)} entry_z={r.entry_z} max_hold={int(r.max_hold)} "
+              f"zlb={int(r.zlb)} cap_h={r.cap_h:.4f} ev={int(r.filter_event)} wk={int(r.filter_weekend)}",
+              flush=True)
+        print(f"  IS {metric_name} = {metric_arr[bi]:+.3f}   IS Sharpe = {r.sr_is:+.3f}   "
+              f"OOS Sharpe = {r.sr_oos:+.3f}", flush=True)
+
     print(f"\nHansen SPA on {n_total}-strategy set ...", flush=True)
     spa = hansen_spa_consistent(pnl_oos_mat, n_boot=2000, mean_block=5.0)
     print(f"  studentized max t = {spa['t_stat_consistent']:.3f}", flush=True)
@@ -298,7 +351,7 @@ def main():
     print(f"  N_trials          = {dsr['n_trials']}", flush=True)
     print(f"  SR_0 expected-max = {dsr['sr0_annual']:+.3f}", flush=True)
     print(f"  z_DSR             = {dsr['z_dsr']:+.3f}", flush=True)
-    print(f"  DSR p-value       = {dsr['dsr_prob']:.4f}", flush=True)
+    print(f"  DSR P(SR>0)       = {dsr['dsr_prob']:.4f}", flush=True)
 
     out = {
         "n_strategies":   n_total,
@@ -313,6 +366,8 @@ def main():
         "dsr_sr0_annual": dsr["sr0_annual"],
         "dsr_z":          dsr["z_dsr"],
         "dsr_p":          dsr["dsr_prob"],
+        "best_idx_sortino": alt_best["sortino"],
+        "best_idx_calmar":  alt_best["calmar"],
     }
     with OUT_JSON.open("w") as fh:
         json.dump(out, fh, indent=2, default=str)

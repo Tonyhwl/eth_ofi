@@ -1,6 +1,4 @@
-# ETH OFI paper figures. locked config: K=5, H=3, |z|>=1, zlb=200,
-# filters off, 10-min cap. outputs fig1_equity, fig2_yearly, fig3_trades,
-# fig5_impact, fig6_cap under figs/.
+# ETH OFI paper figures (fig1/2/3/5/6). locked config: K=5, H=3, |z|>=1, zlb=200, filters off, 10-min cap.
 
 import sys
 import math
@@ -178,7 +176,6 @@ def fig3_trades(trade_pnl):
     n_trades = len(pnl)
     n_win = int((pnl > 0).sum())
     n_los = int((pnl < 0).sum())
-    n_flat = n_trades - n_win - n_los
     win_rate = n_win / n_trades * 100 if n_trades else 0
     mean = float(pnl.mean())
     median = float(np.median(pnl))

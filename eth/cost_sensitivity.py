@@ -30,12 +30,11 @@ def metrics(pnl_oos):
     calendar_years = (returns.index.max() - returns.index.min()).total_seconds() / (365.25 * 86400)
     bars_per_year = len(returns) / calendar_years
     sharpe = float(returns.mean() / returns.std() * math.sqrt(bars_per_year))
-    ann_arith = float(returns.mean() * bars_per_year)
     ann_vol = float(returns.std() * math.sqrt(bars_per_year))
     cumulative = pnl_oos.cumsum()
     drawdown = cumulative - cumulative.cummax()
     max_dd_dollar = float(drawdown.min())
-    effective_years = calendar_years if calendar_years > 0 else len(returns) / bars_per_year
+    effective_years = calendar_years
     total_return = float(pnl_oos.sum() / capital)
     cagr = (1 + total_return) ** (1 / effective_years) - 1 if effective_years > 0 else 0
     return {

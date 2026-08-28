@@ -1,7 +1,5 @@
-# sub-bar OFI signal decay. for each OOS entry, walk forward in TBBO and
-# measure mean cumulative mid-quote change at fixed horizons out to 24h,
-# signed by trade direction. also runs a direction-shuffled placebo at
-# the same entry times to check the result is not just market drift.
+# sub-bar OFI signal decay: for each OOS entry, walk forward in TBBO and measure
+# mean signed cumulative mid-quote change at fixed horizons out to 24h.
 
 import sys
 import math
@@ -15,13 +13,14 @@ from strategy import (
     simulate, vol_target_contracts, build_event_calendar,
     oos_start, panel_path,
 )
-from tick_fill_sim import load_tbbo_day
+from fill_sim import load_tbbo_day
 
 ROOT = Path(__file__).resolve().parent
 HORIZONS_MIN = [0.5, 1, 2, 3, 5, 7, 10, 15, 20, 30, 45, 60, 90, 120,
                 180, 240, 360, 480, 720, 1080, 1440]  # out to 24h
 MAX_STALE_SEC = 120     # reject if matched BBO is more than 2 min stale
-N_SHUFFLE_SEEDS = 50    # placebo seeds for direction-shuffled baseline
+N_SHUFFLE_SEEDS = 50    # seeds for the sign-randomised placebo baseline
+N_BOOT = 2000           # day-block bootstrap resamples for honest decay SEs
 
 
 def bbo_at_fresh(tbbo_df, ts):
@@ -49,6 +48,25 @@ def load_window(d0, n_days):
     return pd.concat(frames).sort_index()
 
 
+def non_overlap_stats(signed_col, entry_ts, horizon_min):
+    """Mean and t on a non-overlapping subset: keep entries at least horizon_min apart."""
+    gap = pd.Timedelta(minutes=horizon_min)
+    last = None
+    vals = []
+    for k in np.argsort(entry_ts.values):
+        if not np.isfinite(signed_col[k]):
+            continue
+        ts = entry_ts[k]
+        if last is None or (ts - last) >= gap:
+            vals.append(float(signed_col[k]))
+            last = ts
+    vals = np.array(vals)
+    if len(vals) < 10:
+        return float("nan"), float("nan"), len(vals)
+    se = vals.std(ddof=1) / math.sqrt(len(vals))
+    return float(vals.mean()), (float(vals.mean() / se) if se > 0 else 0.0), len(vals)
+
+
 def main():
     print("=" * 78)
     print("ETH OFI - signal decay profile, sub-bar to 24h, with placebo")
@@ -68,6 +86,8 @@ def main():
     # pre-extract entry data so we can shuffle directions without re-running
     entries = [(t.entry_time, t.direction) for t in oos]
     directions = np.array([d for _, d in entries], dtype=int)
+    entry_ts = pd.DatetimeIndex([ts for ts, _ in entries])
+    entry_days = np.array([ts.date() for ts, _ in entries])
 
     # group by entry day for cache; load 2 days of TBBO to cover 24h forward
     by_day = {}
@@ -121,6 +141,17 @@ def main():
     placebo_mean = placebo_means.mean(axis=0)
     placebo_sd = placebo_means.std(axis=0, ddof=1)
 
+    # block bootstrap by trading day so overlapping forward windows stay bundled
+    unique_days = sorted(set(entry_days.tolist()))
+    day_rows = [np.where(entry_days == day)[0] for day in unique_days]
+    rng_boot = np.random.default_rng(7)
+    boot_means = np.full((N_BOOT, n_horizons), np.nan)
+    for b in range(N_BOOT):
+        sampled_days = rng_boot.integers(0, len(unique_days), size=len(unique_days))
+        sampled_rows = np.concatenate([day_rows[day_i] for day_i in sampled_days])
+        with np.errstate(invalid="ignore"):
+            boot_means[b] = np.nanmean(signed_ofi[sampled_rows], axis=0)
+
     rows = []
     for j, h in enumerate(HORIZONS_MIN):
         col = signed_ofi[:, j]
@@ -128,19 +159,29 @@ def main():
         if len(finite_returns) == 0:
             continue
         mean = float(finite_returns.mean())
-        se = float(finite_returns.std(ddof=1) / math.sqrt(len(finite_returns)))
+        se_crosssec = float(finite_returns.std(ddof=1) / math.sqrt(len(finite_returns)))
+        boot_at_h = boot_means[:, j][np.isfinite(boot_means[:, j])]
+        se_boot = float(boot_at_h.std(ddof=1)) if len(boot_at_h) > 1 else float("nan")
+        ci_lo = float(np.percentile(boot_at_h, 2.5)) if len(boot_at_h) else float("nan")
+        ci_hi = float(np.percentile(boot_at_h, 97.5)) if len(boot_at_h) else float("nan")
+        _, t_nonoverlap, n_nonoverlap = non_overlap_stats(col, entry_ts, h)
         rows.append({
             "horizon_min":  h,
             "ofi_mean_bp":  round(mean, 3),
-            "ofi_se_bp":    round(se, 3),
-            "ofi_t":        round(mean / se, 2) if se > 0 else 0,
+            "ofi_se_bp":    round(se_boot, 3),
+            "t_crosssec":   round(mean / se_crosssec, 2) if se_crosssec > 0 else 0,
+            "t_blockboot":  round(mean / se_boot, 2) if se_boot > 0 else 0,
+            "t_nonoverlap": round(t_nonoverlap, 2),
+            "ci_lo_bp":     round(ci_lo, 3),
+            "ci_hi_bp":     round(ci_hi, 3),
+            "n":            int(len(finite_returns)),
+            "n_noov":       n_nonoverlap,
             "placebo_bp":   round(float(placebo_mean[j]), 3),
             "placebo_sd":   round(float(placebo_sd[j]), 3),
-            "n":            int(len(finite_returns)),
         })
 
     out = pd.DataFrame(rows)
-    print("Forward signed return: OFI direction vs direction-shuffled placebo")
+    print("Forward signed return: OFI direction vs sign-randomised placebo")
     print(out.to_string(index=False))
 
     out_csv = ROOT / "results" / "decay_profile.csv"
