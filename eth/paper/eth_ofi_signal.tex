@@ -1,0 +1,183 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\usepackage{placeins}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\setlength{\parskip}{0.4em}
+\setlength{\parindent}{0pt}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{4pt}
+\setlength{\belowcaptionskip}{2pt}
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\title{\vspace{-3em}\textbf{Order Flow Imbalance and the Decay of Price Impact in CME Ether Futures}}
+\author{Tony Li\thanks{Independent research conducted by the author; the views expressed are the author's own and not those of Imperial College London.}\\ \normalsize Imperial College London}
+\date{August 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent We study Order Flow Imbalance (Cont, Kukanov, and Stoikov, 2014) on CME Ether futures over February 2021 to August 2026. On 28{,}711 out-of-sample dollar-volume bars (January 2024 to August 2026), an OLS regression of bar mid-quote change on contemporaneous OFI with Newey-West HAC standard errors yields $\hat{\beta} = +0.215$ ($t = 58.1$, $R^2 = 0.30$). The relationship holds on 3{,}162 bars observed after the analysis was completed and frozen, at $\hat{\beta} = +0.097$ ($t = 36.2$, $R^2 = 0.42$). Measured directly from the raw tick stream and anchored at the first instant the signal is observable, the signal's forward impact rises over the first minutes, peaks near +11.3 bp at four hours, and reverses within a day; every horizon out to four hours is significant under a by-day block bootstrap. A sign-randomised placebo at the same timestamps stays within $\pm 1.3$ bp of zero at every horizon. The predictable move is nonetheless comparable to the cost of capturing it: the contract's quoted spread runs 10 to 30 ticks against a four-hour peak of roughly 11 bp, so OFI is informative about price on this contract without being straightforwardly tradable.
+\end{abstract}
+
+\section{Introduction}
+
+Order Flow Imbalance (OFI), introduced by Cont, Kukanov, and Stoikov (2014), aggregates best-bid and best-offer quote arrivals into a signed measure of top-of-book pressure. The construction builds on the information-asymmetry mechanism of Hasbrouck (1991) and the flow-toxicity work of Easley, Lopez de Prado, and O'Hara (2012); the associated price-impact theory is reviewed in Bouchaud, Farmer, and Lillo (2009). On liquid US equities, contemporaneous OFI explains roughly two-thirds of bar-level mid-quote variation. The cryptocurrency evidence is thinner: Silantyev (2019) finds trade-flow imbalance dominates short-horizon prices on BitMEX XBT/USD, and Bieganowski and Ślepaczuk (2026) report OFI as the top SHAP feature in CatBoost ensembles on Binance Futures perpetuals. CME's Ether contract sits between these regimes: a regulated venue with thinner top-of-book depth than the equity tape and a higher tick-relative spread than either. The OFI literature has not addressed it directly; the closest crypto context is Makarov and Schoar (2020) on cross-venue arbitrage and Aleti and Mizrach (2021) on Bitcoin spot-futures integration.
+
+This paper estimates the contemporaneous OFI signal-impact on CME ETH futures from February 2021 to August 2026 and characterises how that impact decays. The construction is the level-1 (best bid / best offer) form of Cont, Kukanov, and Stoikov on dollar-volume bars built from TBBO (trade-sampled top-of-book) events (Lopez de Prado, 2018). Forward signal-impact is characterised at sub-bar to 24-hour horizons; the bar regression alone cannot resolve the decay structure, which is what determines whether the relationship is economically usable at all.
+
+\section{Data}
+
+The panel consists of CME-cleared TBBO data for the front-month ETH futures contract, covering February 2021 through August 2026. After roll handling and contract stitching, all quantities are computed on the front-month book.
+
+Bars are constructed in dollar volume, with the threshold calibrated so that a median in-sample trading day produces about ten bars, and that threshold is held fixed when bars are constructed for the out-of-sample period.
+
+For each bar the following quantities are computed:
+\begin{itemize}
+    \item \texttt{ofi}: signed level-1 (best bid / best offer) order flow imbalance, following the construction of Cont, Kukanov, and Stoikov (2014). For each TBBO update $i$, let $p^B_i, p^A_i$ denote the best-bid and best-ask quotes and $q^B_i, q^A_i$ their sizes. The per-event OFI contribution is $e_i = e^B_i + e^A_i$, where
+    \begin{align*}
+    e^B_i &=
+    \begin{cases}
+        +q^B_i              & \text{if } p^B_i > p^B_{i-1}  \\
+        -q^B_{i-1}          & \text{if } p^B_i < p^B_{i-1}  \\
+        q^B_i - q^B_{i-1}   & \text{if } p^B_i = p^B_{i-1}
+    \end{cases},
+    \qquad
+    e^A_i =
+    \begin{cases}
+        -q^A_i              & \text{if } p^A_i < p^A_{i-1}  \\
+        +q^A_{i-1}          & \text{if } p^A_i > p^A_{i-1}  \\
+        -(q^A_i - q^A_{i-1})& \text{if } p^A_i = p^A_{i-1}.
+    \end{cases}
+    \end{align*}
+    A best-bid improvement adds its new size as positive flow; a best-bid drop subtracts the displaced prior size; a same-price size change contributes the signed change. The ask side is symmetric with reversed sign. The bar OFI is the unnormalised sum over all events in the bar, $O_t = \sum_{i \in \text{bar } t} e_i$, with no normalisation by bar duration, depth, or volume. Only level-1 quantities enter the construction; the TBBO data source carries the touch and trades but not deeper book levels.
+    \item \texttt{mid\_close}: the mid quote $(p^B + p^A)/2$ at the bar boundary.
+    \item \texttt{d\_mid}: the change in mid quote since the previous bar.
+\end{itemize}
+
+\section{Signal-impact regression}
+\label{sec:impact}
+
+Following Cont, Kukanov, and Stoikov (2014) and Silantyev (2019), bar mid-quote change is regressed on contemporaneous and one-bar lagged OFI:
+\begin{equation}
+\Delta p_t = \alpha + \beta_0 \, O_t + \beta_1 \, O_{t-1} + \varepsilon_t,
+\end{equation}
+where $\Delta p_t = m_t - m_{t-1}$ is the change in mid-quote between bar boundaries and $O_t$ is the bar OFI. Standard errors are Newey-West HAC (Newey and West, 1987) with five lags. Table~\ref{tab:impact} reports the estimates on the full panel, the 2021-02 to 2023-12 in-sample (IS) window, and the 2024-01 to 2026-08 out-of-sample (OOS) window.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Window & $n$ (bars) & $\hat\beta_0$ & HAC $t(\beta_0)$ & $\hat\beta_1$ & HAC $t(\beta_1)$ & $R^2$ \\
+\midrule
+Full sample            & 41{,}055 & $+0.247$ & $+70.2$ & $-0.027$ & $-14.4$ & 0.29 \\
+In-sample 2021--23     & 12{,}344 & $+0.300$ & $+44.9$ & $-0.025$ & $-7.0$  & 0.31 \\
+Out-of-sample 2024--26 & 28{,}711 & $+0.215$ & $+58.1$ & $-0.026$ & $-13.3$ & 0.30 \\
+\bottomrule
+\end{tabular}
+\caption{OLS, Newey-West HAC (five lags). $p < 10^{-6}$ on both coefficients in every window.}
+\label{tab:impact}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{fig5_impact.png}
+\caption{Out-of-sample bar mid-quote change against contemporaneous OFI, 25 quantile bins with $\pm1$ standard error and the OLS fit. The relationship is close to linear; full estimates are in Table~\ref{tab:impact}.}
+\label{fig:impact}
+\end{figure}
+
+Both subsamples reject $\beta_0 = 0$ at $p < 10^{-6}$. The IS $R^2$ of $0.31$ and OOS $R^2$ of $0.30$ match to within rounding, and the slope coefficient moves from $+0.300$ in-sample to $+0.215$ out-of-sample. Both $R^2$ figures are below the two-thirds level of Cont et al.\ (2014) for liquid US equities; CME Ether futures have lower depth and a higher tick-relative spread.
+
+The OOS regression has a positive contemporaneous term $\beta_0 = +0.215$ (Figure~\ref{fig:impact}) and a negative one-bar-lagged term $\beta_1 = -0.026$, with the lag-1 reversion approximately $12\%$ of the contemporaneous impact. The regression is identified at bar resolution (mean OOS bar duration ${\approx} 47$ minutes); Section~\ref{sec:decay} characterises the signal's forward impact at sub-bar to 24-hour horizons directly.
+
+\subsection{Forward test on subsequently observed data}
+\label{sec:forward}
+
+The out-of-sample window above is a split of data available when the analysis was built. As a stricter check, the estimation was frozen and the panel was then extended with 3{,}162 bars covering 2026-04-28 to 2026-08-28, a period that did not exist when the specification was fixed. On that window alone the contemporaneous coefficient is $\hat\beta_0 = +0.097$ with HAC $t = 36.2$ and $R^2 = 0.42$.
+
+The coefficient is smaller and the fit is tighter than in the earlier window. Both are consistent with a deeper book: a given quantity of signed flow moves the price less, and explains more of what movement there is. The sign, the significance, and the broad magnitude of the relationship survive on data the specification never saw.
+
+\subsection{Signal decay profile}
+\label{sec:decay}
+
+The bar regression cannot resolve signal decay at sub-bar horizons. Forward impact is measured directly at 21 horizons from 30 seconds to 24 hours. A signal event is a bar at which the rolling $z$-score of cumulative OFI over $K=5$ bars,
+\begin{equation}
+z_t = \frac{C_t - \mu_t}{\sigma_t}, \quad C_t = \sum_{s=t-K+1}^{t} O_s,
+\end{equation}
+first reaches $|z_t| \geq 1$, with $\mu_t$ and $\sigma_t$ the trailing mean and standard deviation of $C$ over a 200-bar window shifted by one bar. The sign of $z_t$ gives the event direction. This defines a timestamp and a direction only; no position, holding rule, or cost is involved.
+
+For each of the 5{,}099 OOS signal events, the mid-quote at $t=0$ and at each horizon is taken from the raw TBBO, and the cumulative return is signed by event direction. A bar's \texttt{mid\_close} is the mid at the last event inside its final minute, and that event is only known to be the last one once the minute has elapsed, so $t=0$ is anchored at the first tick at or after the bar label plus 60 seconds: the earliest instant at which the event is observable. Measurements where the matched BBO at the target time is more than 120 seconds stale (e.g.\ past the daily 5--6 pm ET session break) are dropped, so the sample falls with horizon (Table~\ref{tab:decay}). A sign-randomised placebo at the same timestamps, averaged over 50 seeds, stays within $\pm 1.3$ bp of zero at every horizon and its $95\%$ band always covers zero; the OFI-direction curve is not market drift. Standard errors and confidence intervals are from a block bootstrap over trading days (2{,}000 resamples): the forward windows of nearby events overlap, so a cross-sectional standard error understates uncertainty at long horizons. A non-overlapping subsample, keeping events at least one horizon apart, is reported as a cross-check.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{rrrrr}
+\toprule
+Horizon & Signed return (bp) & Block-bootstrap $t$ & $95\%$ CI (bp) & $n$ \\
+\midrule
+$0.5$ min  & $+1.78$  & $7.1$  & $[+1.3,\ +2.3]$   & $5{,}099$ \\
+$1$ min    & $+2.45$  & $7.5$  & $[+1.8,\ +3.1]$   & $5{,}099$ \\
+$2$ min    & $+2.50$  & $6.6$  & $[+1.7,\ +3.3]$   & $5{,}099$ \\
+$10$ min   & $+3.81$  & $4.6$  & $[+2.2,\ +5.5]$   & $4{,}851$ \\
+$30$ min   & $+6.30$  & $4.7$  & $[+3.8,\ +8.9]$   & $4{,}758$ \\
+$1$ hour   & $+8.13$  & $3.9$  & $[+4.0,\ +12.2]$  & $4{,}644$ \\
+$2$ hours  & $+9.44$  & $3.1$  & $[+3.5,\ +15.2]$  & $4{,}236$ \\
+$4$ hours  & $+11.28$ & $2.6$  & $[+2.9,\ +20.1]$  & $4{,}159$ \\
+$8$ hours  & $-0.36$  & $-0.1$ & $[-13.1,\ +12.9]$ & $3{,}519$ \\
+$12$ hours & $+1.86$  & $0.3$  & $[-12.1,\ +16.6]$ & $3{,}619$ \\
+$24$ hours & $-11.46$ & $-1.0$ & $[-32.6,\ +11.5]$ & $3{,}293$ \\
+\bottomrule
+\end{tabular}
+\caption{Mean forward signed return at fixed horizons after an OOS signal event. The $t$-statistic and $95\%$ interval are from a by-day block bootstrap (2{,}000 resamples), which keeps each day's overlapping forward windows together. A non-overlapping subsample (events at least one horizon apart) gives $t = 2.4$ at the four-hour peak.}
+\label{tab:decay}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{fig4_decay.png}
+\caption{Signed forward return after a signal event, OOS. Peak +11.3 bp at 4 hours; crosses zero by 24 hours.}
+\label{fig:decay}
+\end{figure}
+
+The forward impact rises over the first two minutes, continues through the bar horizon, peaks at $+11.3$ bp at four hours, and decays to $-11.5$ bp at $24$ hours. The four-hour peak remains significant after the overlap correction (block-bootstrap $t = 2.6$, $95\%$ CI $[+2.9,\ +20.1]$ bp; non-overlapping subsample $t = 2.4$); the cross-sectional statistic overstates it, and beyond four hours the signed return is not distinguishable from zero. The bar regression's $\beta_1$ reversion is small relative to the longer-horizon dynamics in Figure~\ref{fig:decay}.
+
+\section{Economic magnitude}
+\label{sec:magnitude}
+
+The decay profile is statistically clear but economically small relative to the cost of transacting on this contract. The four-hour peak of $+11.3$ bp is the largest signed move the signal anticipates, and it is reached only after four hours; by ten minutes the figure is $+3.8$ bp. Against this, the front-month quoted spread on CME Ether futures runs 10 to 30 ticks over the sample, or roughly $1.7$ to $5.0$ bp per side at typical prices, so a single round trip that crosses the spread consumes a substantial fraction of the entire four-hour move and more than the whole ten-minute move.
+
+Two consequences follow. Liquidity-taking execution is not viable at this signal magnitude: the move being predicted is of the same order as the spread being paid. Liquidity-providing execution avoids that cost but introduces adverse selection, because a resting order fills when the market comes to it, which on a flow-following signal is when the flow has reversed. Neither route is addressed further here; the point is only that a contemporaneous $t$-statistic of $58$ does not by itself imply an exploitable edge on this contract, and the gap between the two is the spread.
+
+\section{Conclusion}
+
+The OFI signal is present on CME Ether futures at HAC $t = 58.1$ OOS, and holds at $t = 36.2$ on 3{,}162 bars observed after the specification was frozen. The main empirical contribution is the decay profile: the signal's forward impact rises over the first minutes, peaks near $+11.3$ bp at four hours, and reverses by twenty-four, with every horizon out to the peak significant under a by-day block bootstrap and a sign-randomised placebo flat at every horizon. The predictable move is nonetheless comparable to the quoted spread, so the relationship is informative about price formation without being straightforwardly tradable.
+
+Two limitations bound the result. The construction is level-1 only: the TBBO source carries the touch and trades but not deeper book levels, so the deeper-book dynamics that the original equity result relies on cannot be measured here. TBBO is also trade-sampled, meaning the book is observed only when a trade prints; the median gap between an event and the preceding quote observation is roughly nine seconds, and any measurement anchored on this tape inherits that granularity. A quote-level feed would sharpen the sub-minute horizons and permit a proper treatment of execution, which is the natural extension.
+
+\section*{References}
+
+\begin{itemize}
+    \setlength{\itemsep}{0.2em}
+    \item Aleti, S. and Mizrach, B. (2021). Bitcoin spot and futures market microstructure. \textit{Journal of Futures Markets}, 41(2), 194--225.
+    \item Bieganowski, B. and Ślepaczuk, R. (2026). Explainable patterns in cryptocurrency microstructure. arXiv:2602.00776.
+    \item Bouchaud, J.-P., Farmer, J.~D., and Lillo, F. (2009). How markets slowly digest changes in supply and demand. In \textit{Handbook of Financial Markets: Dynamics and Evolution}, 57--160.
+    \item Cont, R., Kukanov, A., and Stoikov, S. (2014). The price impact of order book events. \textit{Journal of Financial Econometrics}, 12(1), 47--88.
+    \item Easley, D., Lopez de Prado, M., and O'Hara, M. (2012). Flow toxicity and liquidity in a high-frequency world. \textit{Review of Financial Studies}, 25(5), 1457--1493.
+    \item Hasbrouck, J. (1991). Measuring the information content of stock trades. \textit{Journal of Finance}, 46(1), 179--207.
+    \item Lopez de Prado, M. (2018). \textit{Advances in Financial Machine Learning}. Wiley.
+    \item Makarov, I. and Schoar, A. (2020). Trading and arbitrage in cryptocurrency markets. \textit{Journal of Financial Economics}, 135(2), 293--319.
+    \item Newey, W.~K. and West, K.~D. (1987). A simple, positive semi-definite, heteroskedasticity and autocorrelation consistent covariance matrix. \textit{Econometrica}, 55(3), 703--708.
+    \item Silantyev, E. (2019). Order flow analysis of cryptocurrency markets. \textit{Digital Finance}, 1(1), 191--218.
+\end{itemize}
+
+\end{document}
