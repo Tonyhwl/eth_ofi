@@ -18,7 +18,7 @@
 \titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
 \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
 
-\title{\vspace{-3em}\textbf{Order Flow Imbalance and the Decay of Price Impact in CME Ether Futures}}
+\title{\vspace{-3em}\textbf{Order Flow Imbalance and Price Impact in CME Ether Futures}}
 \author{Tony Li\thanks{Independent research conducted by the author; the views expressed are the author's own and not those of Imperial College London.}\\ \normalsize Imperial College London}
 \date{August 2026}
 
@@ -26,14 +26,14 @@
 \maketitle
 
 \begin{abstract}
-\noindent We study Order Flow Imbalance (Cont, Kukanov, and Stoikov, 2014) on CME Ether futures over February 2021 to August 2026. On 28{,}711 out-of-sample dollar-volume bars, an OLS regression of bar mid-quote change on contemporaneous OFI with Newey-West HAC standard errors yields $\hat{\beta}_0 = +0.215$ ($t = 58.1$, $R^2 = 0.30$); this regression is contemporaneous, so it measures price impact rather than forecasting power. Forward impact is measured from 2{,}958 signal events, each anchored at the first instant the event is observable from the tape. The signed move is at most $+1.7$ bp inside ten minutes, grows to $+5.5$ bp at thirty minutes and roughly $+10$ bp at four hours (block-bootstrap $t$ between $2.5$ and $3.6$), and is not identified beyond that horizon; a sign-randomised placebo stays within $\pm 1.8$ bp of zero throughout. The quoted spread at the same instants has a median of $3.5$ bp, so one round trip that crosses the spread consumes about a third of the largest predictable move and about the entire move at horizons up to twenty minutes. OFI is informative about price formation on this contract; monetisation is marginal at best.
+\noindent We study Order Flow Imbalance (Cont, Kukanov, and Stoikov, 2014) on CME Ether futures over February 2021 to August 2026. On 28{,}711 out-of-sample dollar-volume bars, an OLS regression of bar mid-quote change on contemporaneous OFI with Newey-West HAC standard errors yields $\hat{\beta}_0 = +0.215$ ($t = 58.1$, $R^2 = 0.30$), against $+0.300$ and $R^2 = 0.31$ in sample. The regression is contemporaneous, so it measures price impact rather than forecasting power: used on its own as a predictor, lagged OFI explains essentially none of the following bar's move ($R^2 < 0.001$ out of sample). OFI is a strong descriptor of price formation on this contract; it is not, by itself, a trading signal.
 \end{abstract}
 
 \section{Introduction}
 
 Order Flow Imbalance (OFI) aggregates best-bid and best-offer quote arrivals into a signed measure of top-of-book pressure. On liquid US equities, contemporaneous OFI explains roughly two-thirds of bar-level mid-quote variation (Cont, Kukanov, and Stoikov, 2014). The cryptocurrency evidence is thinner: Silantyev (2019) finds trade-flow imbalance dominates short-horizon prices on BitMEX XBT/USD, and Bieganowski and Ślepaczuk (2026) report OFI as the top SHAP feature in CatBoost ensembles on Binance Futures perpetuals. CME's Ether contract sits apart from both: a regulated venue whose quoted spread, in basis points of price, is an order of magnitude wider than the equity tape's.
 
-This paper estimates the contemporaneous OFI--price relation on CME ETH futures from February 2021 to August 2026 and then measures forward impact directly at sub-bar to 24-hour horizons. The construction is the level-1 (best bid / best offer) form of Cont, Kukanov, and Stoikov on dollar-volume bars built from TBBO (trade-sampled top-of-book) events (Lopez de Prado, 2018).
+This paper estimates the contemporaneous OFI--price relation on CME ETH futures from February 2021 to August 2026. The construction is the level-1 (best bid / best offer) form of Cont, Kukanov, and Stoikov on dollar-volume bars built from TBBO (trade-sampled top-of-book) events (Lopez de Prado, 2018).
 
 \section{Data}
 
@@ -98,70 +98,13 @@ Both subsamples reject $\beta_0 = 0$ at $p < 10^{-6}$ (Figure~\ref{fig:impact}).
 \label{fig:impact}
 \end{figure}
 
-This regression is contemporaneous: it measures how the mid quote moves together with the flow inside a bar, not whether flow forecasts the next bar. Used on its own as a predictor, lagged OFI explains essentially none of the following bar's move ($R^2 < 0.001$ out-of-sample), so the content of Table~\ref{tab:impact} is price impact rather than forecastability. Whether the flow carries any predictive content is a question about horizons inside the bar (mean OOS bar duration ${\approx} 49$ minutes), which the bar regression cannot resolve; Section~\ref{sec:decay} measures it directly.
-
-\subsection{Forward impact after signal events}
-\label{sec:decay}
-
-Forward impact is measured at 21 horizons from 30 seconds to 24 hours after signal events. A signal event is the first bar at which the rolling $z$-score of cumulative OFI over $K=5$ bars,
-\begin{equation}
-z_t = \frac{C_t - \mu_t}{\sigma_t}, \quad C_t = \sum_{s=t-K+1}^{t} O_s,
-\end{equation}
-crosses $|z_t| \geq 1$ from below, with $\mu_t$ and $\sigma_t$ the trailing mean and standard deviation of $C$ over a 200-bar window shifted by one bar. The sign of $z_t$ gives the event direction; there are 2{,}958 out-of-sample events. This defines a timestamp and a direction only --- no position or holding rule is involved. These parameters were originally selected for a trading application of the same signal, so the profile is checked against that choice: varying $K \in \{3, 5, 10\}$ at threshold $1$, and the threshold across $\{1, 1.5, 2\}$ at $K = 5$ (re-measured at minute resolution for comparability across configurations), the four-hour mean ranges from $+8.7$ to $+11.8$ bp while the one-minute means stay near zero throughout.
-
-Timing is handled conservatively. Bars are aggregated from one-minute buckets, and a bar is complete only once the contract's cumulative dollar volume crosses the bar threshold, which happens at a specific trade after the bar's final minute; $t=0$ is anchored at that trade, the first instant the event is observable, and the mid quote and spread are taken there. For each horizon the mid is the last quote at or before the target time, discarded if more than 120 seconds stale (e.g.\ past the daily 5--6 pm ET session break), so the usable sample varies by horizon and the attrition is concentrated at particular times of day. On the 483 events measurable at every horizon, the point estimates trend upward with horizon and show no detectable reversal, so behaviour beyond roughly four hours is not identified by this design and no claim is made about it.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.97\textwidth]{fig4_decay.png}
-\caption{Signed forward return after a signal event, OOS, with the block-bootstrap $95\%$ band. The move stays below $+2$ bp inside ten minutes, grows through the 30-minute to 4-hour range, and is unidentified beyond it.}
-\label{fig:decay}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{rrrrr}
-\toprule
-Horizon & Signed return (bp) & Block-bootstrap $t$ & $95\%$ CI (bp) & $n$ \\
-\midrule
-$0.5$ min  & $+0.49$ & $1.9$ & $[-0.0,\ +1.0]$ & $2{,}958$ \\
-$1$ min    & $+0.74$ & $2.1$ & $[+0.1,\ +1.4]$ & $2{,}958$ \\
-$2$ min    & $+1.03$ & $2.0$ & $[+0.0,\ +2.1]$ & $2{,}958$ \\
-$5$ min    & $+1.02$ & $1.5$ & $[-0.2,\ +2.4]$ & $2{,}850$ \\
-$10$ min   & $+1.72$ & $1.9$ & $[-0.0,\ +3.5]$ & $2{,}807$ \\
-$20$ min   & $+3.44$ & $2.7$ & $[+1.0,\ +5.9]$ & $2{,}776$ \\
-$30$ min   & $+5.48$ & $3.6$ & $[+2.6,\ +8.6]$ & $2{,}758$ \\
-$1$ hour   & $+7.48$ & $3.5$ & $[+3.6,\ +11.8]$ & $2{,}684$ \\
-$2$ hours  & $+7.37$ & $2.5$ & $[+1.9,\ +13.4]$ & $2{,}475$ \\
-$3$ hours  & $+9.73$ & $2.7$ & $[+2.6,\ +17.0]$ & $2{,}434$ \\
-$4$ hours  & $+10.37$ & $2.5$ & $[+2.5,\ +18.5]$ & $2{,}410$ \\
-$6$ hours  & $+9.18$ & $1.8$ & $[-0.3,\ +19.7]$ & $2{,}230$ \\
-$8$ hours  & $-2.85$ & $-0.5$ & $[-14.9,\ +8.8]$ & $2{,}030$ \\
-$12$ hours & $+5.51$ & $0.9$ & $[-7.0,\ +17.7]$ & $2{,}109$ \\
-$24$ hours & $-2.77$ & $-0.3$ & $[-19.8,\ +14.1]$ & $2{,}149$ \\
-\bottomrule
-\end{tabular}
-\caption{Mean forward signed return at fixed horizons after an OOS signal event (15 of the 21 measured horizons shown; the omitted rows at 3, 7, 15, 45, 90 minutes and 18 hours lie on the same path, and none exceeds the four-hour figure). The $t$-statistic and $95\%$ interval are from a by-day block bootstrap (2{,}000 resamples), which keeps each day's overlapping forward windows together. A non-overlapping subsample (events at least one horizon apart) gives $t = 2.5$ at four hours.}
-\label{tab:decay}
-\end{table}
-
-Figure~\ref{fig:decay} plots the profile and Table~\ref{tab:decay} reports it. A sign-randomised placebo at the same timestamps, averaged over 50 seeds, stays within $\pm 1.8$ bp of zero at every horizon and its $95\%$ band always covers zero, so the curve is not market drift. Standard errors and confidence intervals are from a block bootstrap over trading days: the forward windows of nearby events overlap, so a cross-sectional standard error would understate uncertainty at long horizons. A non-overlapping subsample, keeping events at least one horizon apart, is the cross-check.
-
-The shape is the result. Inside ten minutes the signed move is at most $+1.7$ bp, half the median quoted spread at the event instants. It grows through the half-hour ($+5.5$ bp, $t=3.6$) and the hour ($+7.5$ bp, $t=3.5$) and reaches roughly $+10$ bp around four hours ($t=2.5$, $95\%$ CI $[+2.5,\ +18.5]$). The four-hour value is the largest among the significant horizons and is read as the scale of the move, not as a tested peak location: it is one of 21 correlated estimates, and beyond it the pooled estimates are noisy while the fixed-horizon subsample shows no reversal.
-
-\section{Economic magnitude}
-\label{sec:magnitude}
-
-The quoted spread, measured at the 2{,}958 event instants themselves, has a median of $3.5$ bp with an interquartile range of $2.4$ to $5.3$ bp. A round trip that crosses the spread therefore costs about one median spread --- roughly a third of the four-hour move, while the twenty-minute move ($+3.4$ bp) is about equal to it and everything shorter is smaller. Capturing the hours-scale drift means holding through a window whose $95\%$ interval spans $+2.5$ to $+18.5$ bp, before any slippage or latency.
-
-Posting passively rather than crossing avoids the spread but introduces adverse selection: a resting order fills when the market comes to it, which on a flow-following signal is when the flow has already reversed. Monetisation is therefore marginal at best: the move inside twenty minutes is at best about equal to the spread, the half-hour to two-hour moves clear it by less than a factor of $2.2$, and even the four-hour move exceeds it only about threefold.
+This regression is contemporaneous: it measures how the mid quote moves together with the flow inside a bar (mean OOS bar duration ${\approx} 49$ minutes), not whether flow forecasts the next bar. Used on its own as a predictor, lagged OFI explains essentially none of the following bar's move ($R^2 < 0.001$ out-of-sample), so the content of Table~\ref{tab:impact} is price impact rather than forecastability. Whether the flow carries predictive content at horizons inside the bar is a question the bar regression cannot resolve, and answering it properly requires quote-level data.
 
 \section{Conclusion}
 
-The contemporaneous OFI--price relation is strong on CME Ether futures (HAC $t = 58.1$ out-of-sample), and it is a statement about price impact, not forecastability. The forward measurement gives the predictive content its honest size: a sub-spread move inside ten minutes, then a drift that builds to roughly $+10$ bp over four hours, robust to the event-definition parameters and flat under a sign-randomised placebo, and unidentified beyond that horizon. Set against a median quoted spread of $3.5$ bp at the same instants, the relationship is informative about price formation while offering at most a marginal margin over trading costs.
+The contemporaneous OFI--price relation is strong and stable on CME Ether futures: the explanatory power is nearly identical in and out of sample ($R^2$ of $0.31$ and $0.30$), and the slope remains large and precisely estimated throughout. It is a statement about price impact, not forecastability --- lagged OFI alone explains essentially none of the next bar's move --- so the result describes how this market absorbs order flow rather than offering a trading signal.
 
-The tape bounds what can be measured. TBBO is trade-sampled, so the book is observed only when a trade prints --- the median staleness of the matched quote at measurement horizons is nine seconds --- and it carries no depth beyond the touch, so execution cannot be treated properly here. A quote-level feed would sharpen the sub-minute horizons and support a proper execution study, which is the natural extension.
+The tape bounds what can be measured. TBBO is trade-sampled, so the book is observed only when a trade prints, and it carries no depth beyond the touch. A quote-level feed would permit measuring the relation at horizons inside the bar --- where any predictive content would live --- and a proper treatment of execution, which are the natural extensions.
 
 \section*{References}
 
