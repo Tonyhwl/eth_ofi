@@ -33,7 +33,7 @@
 
 Order Flow Imbalance (OFI) aggregates best-bid and best-offer quote arrivals into a signed measure of top-of-book pressure. On liquid US equities, contemporaneous OFI explains roughly two-thirds of bar-level mid-quote variation (Cont, Kukanov, and Stoikov, 2014). The cryptocurrency evidence is thinner: Silantyev (2019) finds trade-flow imbalance dominates short-horizon prices on BitMEX XBT/USD, and Bieganowski and Ślepaczuk (2026) report OFI as the top SHAP feature in CatBoost ensembles on Binance Futures perpetuals. CME's Ether contract sits apart from both: a regulated venue whose quoted spread, in basis points of price, is an order of magnitude wider than the equity tape's.
 
-This paper estimates the contemporaneous OFI--price relation on CME ETH futures from February 2021 to August 2026. The construction is the level-1 (best bid / best offer) form of Cont, Kukanov, and Stoikov on dollar-volume bars built from TBBO (trade-sampled top-of-book) events (Lopez de Prado, 2018).
+This paper estimates the contemporaneous OFI signal-impact on CME ETH futures from February 2021 to August 2026. The construction is the level-1 (best bid / best offer) form of Cont, Kukanov, and Stoikov on dollar-volume bars built from TBBO (trade-sampled top-of-book) events (Lopez de Prado, 2018).
 
 \section{Data}
 
@@ -102,7 +102,7 @@ This regression is contemporaneous: it measures how the mid quote moves together
 
 \section{Conclusion}
 
-The contemporaneous OFI--price relation is strong and stable on CME Ether futures: the explanatory power is nearly identical in and out of sample ($R^2$ of $0.31$ and $0.30$), and the slope remains large and precisely estimated throughout. It is a statement about price impact, not forecastability; lagged OFI alone explains essentially none of the next bar's move, so the result describes how this market absorbs order flow rather than offering a trading signal.
+The contemporaneous OFI signal-impact is strong and stable on CME Ether futures: the explanatory power is nearly identical in and out of sample ($R^2$ of $0.31$ and $0.30$), and the slope remains large and precisely estimated throughout. It is a statement about price impact, not forecastability; lagged OFI alone explains essentially none of the next bar's move, so the result describes how this market absorbs order flow rather than offering a trading signal.
 
 The tape bounds what can be measured. TBBO is trade-sampled, so the book is observed only when a trade prints, and it carries no depth beyond the touch. A quote-level feed would permit measuring the relation at horizons inside the bar, where any predictive content would live, and a proper treatment of execution; these are the natural extensions.
 
