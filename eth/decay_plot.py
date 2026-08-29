@@ -39,7 +39,7 @@ def main():
             label="Mean signed cumulative return")
     ax.axhline(0, color=ink, linewidth=0.6)
     ax.axvline(47, color=acc3, linewidth=0.9, linestyle=(0, (2, 3)),
-               label="$\\approx$ bar duration (47 min)")
+               label="$\\approx$ bar duration (49 min)")
 
     ax.set_xlabel("Minutes since signal entry")
     ax.set_ylabel("Cumulative mid-quote change, signed by direction (bp)")
