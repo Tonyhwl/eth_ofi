@@ -38,14 +38,12 @@ def main():
             markerfacecolor=acc1, markeredgecolor=ink, markeredgewidth=0.6,
             label="Mean signed cumulative return")
     ax.axhline(0, color=ink, linewidth=0.6)
-    ax.axvline(10, color=acc2, linewidth=1.0, linestyle=(0, (4, 3)),
-               label="10-min clock cap (risk management)")
     ax.axvline(47, color=acc3, linewidth=0.9, linestyle=(0, (2, 3)),
                label="$\\approx$ bar duration (47 min)")
 
     ax.set_xlabel("Minutes since signal entry")
     ax.set_ylabel("Cumulative mid-quote change, signed by direction (bp)")
-    ax.set_title("OOS signal decay from OFI entry (n $\\approx$ 4,500 trades)",
+    ax.set_title(f"Forward price impact after an OFI signal (n = {int(df["n"].max()):,} signals)",
                  loc="left")
     ax.set_xscale("log")
     ticks = [0.5, 1, 2, 5, 10, 30, 60, 240, 720, 1440]

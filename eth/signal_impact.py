@@ -80,8 +80,11 @@ def main():
 
     rows = []
     rows.append(run_regression(df, "Full sample"))
-    rows.append(run_regression(df[df.index <  oos_start], "In-sample 2021-02 to 2023-12"))
-    rows.append(run_regression(df[df.index >= oos_start], "Out-of-sample 2024-01 to 2026-04"))
+    # labels derive from the data so they cannot go stale when the panel grows
+    is_df, oos_df = df[df.index < oos_start], df[df.index >= oos_start]
+    span = lambda d: f"{d.index.min():%Y-%m} to {d.index.max():%Y-%m}"
+    rows.append(run_regression(is_df,  f"In-sample {span(is_df)}"))
+    rows.append(run_regression(oos_df, f"Out-of-sample {span(oos_df)}"))
 
     pd.DataFrame(rows).to_csv(root / "results" / "ofi_signal_impact.csv", index=False)
     print(f"\nwrote {root / 'results' / 'ofi_signal_impact.csv'}")
