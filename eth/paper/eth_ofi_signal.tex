@@ -26,7 +26,7 @@
 \maketitle
 
 \begin{abstract}
-\noindent We study Order Flow Imbalance (Cont, Kukanov, and Stoikov, 2014) on CME Ether futures over February 2021 to August 2026. On 28{,}711 out-of-sample dollar-volume bars (January 2024 to August 2026), an OLS regression of bar mid-quote change on contemporaneous OFI with Newey-West HAC standard errors yields $\hat{\beta} = +0.215$ ($t = 58.1$, $R^2 = 0.30$). The relationship holds on 3{,}162 bars observed after the analysis was completed and frozen, at $\hat{\beta} = +0.097$ ($t = 36.2$, $R^2 = 0.42$). Measured directly from the raw tick stream and anchored at the first instant the signal is observable, the signal's forward impact rises over the first minutes, and peaks near +11.3 bp at four hours; every horizon out to that peak is significant under a by-day block bootstrap, and beyond it the signed return is not distinguishable from zero, with the point estimate turning negative by twenty-four hours. A sign-randomised placebo at the same timestamps stays within $\pm 1.3$ bp of zero at every horizon. The predictable move is nonetheless comparable to the cost of capturing it: the contract's quoted spread runs 10 to 30 ticks against a four-hour peak of roughly 11 bp, so OFI is informative about price on this contract without being straightforwardly tradable.
+\noindent We study Order Flow Imbalance (Cont, Kukanov, and Stoikov, 2014) on CME Ether futures over February 2021 to August 2026. On 28{,}711 out-of-sample dollar-volume bars (January 2024 to August 2026), an OLS regression of bar mid-quote change on contemporaneous OFI with Newey-West HAC standard errors yields $\hat{\beta} = +0.215$ ($t = 58.1$, $R^2 = 0.30$). Measured directly from the raw tick stream and anchored at the first instant the signal is observable, the signal's forward impact rises over the first minutes, and peaks near +11.3 bp at four hours; every horizon out to that peak is significant under a by-day block bootstrap, and beyond it the signed return is not distinguishable from zero, with the point estimate turning negative by twenty-four hours. A sign-randomised placebo at the same timestamps stays within $\pm 1.3$ bp of zero at every horizon. The predictable move is nonetheless comparable to the cost of capturing it: the contract's quoted spread runs 10 to 30 ticks against a four-hour peak of roughly 11 bp, so OFI is informative about price on this contract without being straightforwardly tradable.
 \end{abstract}
 
 \section{Introduction}
@@ -89,7 +89,7 @@ Out-of-sample 2024--26 & 28{,}711 & $+0.215$ & $+58.1$ & $-0.026$ & $-13.3$ & 0.
 \label{tab:impact}
 \end{table}
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.82\textwidth]{fig5_impact.png}
 \caption{Out-of-sample bar mid-quote change against contemporaneous OFI, 25 quantile bins with $\pm1$ standard error and the OLS fit. The relationship is close to linear; full estimates are in Table~\ref{tab:impact}.}
@@ -100,13 +100,6 @@ Both subsamples reject $\beta_0 = 0$ at $p < 10^{-6}$. The IS $R^2$ of $0.31$ an
 
 The OOS regression has a positive contemporaneous term $\beta_0 = +0.215$ (Figure~\ref{fig:impact}) and a negative one-bar-lagged term $\beta_1 = -0.026$, with the lag-1 reversion approximately $12\%$ of the contemporaneous impact. The regression is identified at bar resolution (mean OOS bar duration ${\approx} 47$ minutes); Section~\ref{sec:decay} characterises the signal's forward impact at sub-bar to 24-hour horizons directly.
 
-\subsection{Forward test on subsequently observed data}
-\label{sec:forward}
-
-The out-of-sample window above is a split of data available when the analysis was built. As a stricter check, the estimation was frozen and the panel was then extended with 3{,}162 bars covering 2026-04-28 to 2026-08-28, a period that did not exist when the specification was fixed. On that window alone the contemporaneous coefficient is $\hat\beta_0 = +0.097$ with HAC $t = 36.2$ and $R^2 = 0.42$.
-
-The coefficient is smaller and the fit is tighter than in the earlier window. The fall in $\hat\beta_0$ is largely a change of scale rather than of economic content: $O_t$ is an unnormalised sum of contract quantities, and its standard deviation rises by a factor of $1.5$ across the two windows while the price level falls, so the price move per unit of raw flow declines mechanically. Expressed per standard deviation of flow, contemporaneous impact is $28.1$ bp in the earlier window against $32.2$ bp in the forward window. The sign, the significance, and the economic magnitude of the relationship survive on data the specification never saw.
-
 \subsection{Signal decay profile}
 \label{sec:decay}
 
@@ -116,7 +109,14 @@ z_t = \frac{C_t - \mu_t}{\sigma_t}, \quad C_t = \sum_{s=t-K+1}^{t} O_s,
 \end{equation}
 first reaches $|z_t| \geq 1$, with $\mu_t$ and $\sigma_t$ the trailing mean and standard deviation of $C$ over a 200-bar window shifted by one bar. The sign of $z_t$ gives the event direction. This defines a timestamp and a direction only; no position, holding rule, or cost is involved.
 
-For each of the 5{,}099 OOS signal events, the mid-quote at $t=0$ and at each horizon is taken from the raw TBBO, and the cumulative return is signed by event direction. A bar's \texttt{mid\_close} is the mid at the last event inside its final minute, and that event is only known to be the last one once the minute has elapsed, so $t=0$ is anchored at the first tick at or after the bar label plus 60 seconds: the earliest instant at which the event is observable. Measurements where the matched BBO at the target time is more than 120 seconds stale (e.g.\ past the daily 5--6 pm ET session break) are dropped, so the sample falls with horizon (Table~\ref{tab:decay}). A sign-randomised placebo at the same timestamps, averaged over 50 seeds, stays within $\pm 1.3$ bp of zero at every horizon and its $95\%$ band always covers zero; the OFI-direction curve is not market drift. Standard errors and confidence intervals are from a block bootstrap over trading days (2{,}000 resamples): the forward windows of nearby events overlap, so a cross-sectional standard error understates uncertainty at long horizons. A non-overlapping subsample, keeping events at least one horizon apart, is reported as a cross-check.
+For each of the 5{,}099 OOS signal events, the mid-quote at $t=0$ and at each horizon is taken from the raw TBBO, and the cumulative return is signed by event direction. A bar's \texttt{mid\_close} is the mid at the last event inside its final minute, and that event is only known to be the last one once the minute has elapsed, so $t=0$ is anchored at the first tick at or after the bar label plus 60 seconds: the earliest instant at which the event is observable. Measurements where the matched BBO at the target time is more than 120 seconds stale (e.g.\ past the daily 5--6 pm ET session break) are dropped, so the sample falls with horizon. Figure~\ref{fig:decay} plots the profile and Table~\ref{tab:decay} reports it. A sign-randomised placebo at the same timestamps, averaged over 50 seeds, stays within $\pm 1.3$ bp of zero at every horizon and its $95\%$ band always covers zero; the OFI-direction curve is not market drift. Standard errors and confidence intervals are from a block bootstrap over trading days (2{,}000 resamples): the forward windows of nearby events overlap, so a cross-sectional standard error understates uncertainty at long horizons. A non-overlapping subsample, keeping events at least one horizon apart, is reported as a cross-check.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{fig4_decay.png}
+\caption{Signed forward return after a signal event, OOS. Peak $+11.3$ bp at four hours; not distinguishable from zero beyond it.}
+\label{fig:decay}
+\end{figure}
 
 \begin{table}[H]
 \centering
@@ -142,12 +142,6 @@ $24$ hours & $-11.46$ & $-1.0$ & $[-32.6,\ +11.5]$ & $3{,}293$ \\
 \label{tab:decay}
 \end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{fig4_decay.png}
-\caption{Signed forward return after a signal event, OOS. Peak +11.3 bp at 4 hours; crosses zero by 24 hours.}
-\label{fig:decay}
-\end{figure}
 
 The forward impact rises over the first two minutes, continues through the bar horizon, peaks at $+11.3$ bp at four hours, and decays to $-11.5$ bp at $24$ hours. The four-hour peak remains significant after the overlap correction (block-bootstrap $t = 2.6$, $95\%$ CI $[+2.9,\ +20.1]$ bp; non-overlapping subsample $t = 2.4$); the cross-sectional statistic overstates it, and beyond four hours the signed return is not distinguishable from zero. The bar regression's $\beta_1$ reversion is small relative to the longer-horizon dynamics in Figure~\ref{fig:decay}.
 
@@ -160,7 +154,7 @@ Posting passively rather than crossing avoids the spread but introduces adverse 
 
 \section{Conclusion}
 
-The OFI signal is present on CME Ether futures at HAC $t = 58.1$ OOS and holds at $t = 36.2$ on data observed after the specification was frozen. The main empirical contribution is the decay profile, significant at every horizon out to the four-hour peak, flat under a sign-randomised placebo, and indistinguishable from zero beyond the peak. The predictable move is comparable to the quoted spread, so the relationship is informative about price formation without being straightforwardly tradable.
+The OFI signal is present on CME Ether futures at HAC $t = 58.1$ OOS. The main empirical contribution is the decay profile, significant at every horizon out to the four-hour peak, flat under a sign-randomised placebo, and indistinguishable from zero beyond the peak. The predictable move is comparable to the quoted spread, so the relationship is informative about price formation without being straightforwardly tradable.
 
 The construction is level-1 only: the TBBO source carries the touch and trades but not deeper book levels, so the deeper-book dynamics that the original equity result relies on cannot be measured here. TBBO is also trade-sampled, meaning the book is observed only when a trade prints; the median gap between an event and the preceding quote observation is roughly nine seconds, and any measurement anchored on this tape inherits that granularity. A quote-level feed would sharpen the sub-minute horizons and permit a proper treatment of execution, which is the natural extension.
 
