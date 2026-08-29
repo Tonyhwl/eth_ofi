@@ -27,7 +27,7 @@ def process_day(file_path, the_date):
     if out_right.empty:
         return None
 
-    front_sym, _ = find_front(out_right["symbol"].unique(), the_date)
+    front_sym, days_to_expiry = find_front(out_right["symbol"].unique(), the_date)
     if front_sym is None:
         return None
     front = out_right[out_right["symbol"] == front_sym].copy()
@@ -36,6 +36,8 @@ def process_day(file_path, the_date):
 
     bid_px = front["bid_px_00"].astype(float).values
     ask_px = front["ask_px_00"].astype(float).values
+    bid_sz = front["bid_sz_00"].astype(float).values
+    ask_sz = front["ask_sz_00"].astype(float).values
     valid = np.isfinite(bid_px) & np.isfinite(ask_px) & (bid_px > 0) & (ask_px > bid_px)
     front = front.loc[valid]
     if len(front) < 10:
@@ -58,23 +60,46 @@ def process_day(file_path, the_date):
     buy_dollar  = buy_size  * price
     sell_dollar = sell_size * price
 
+    large_thresh = 5
+    is_large = size >= large_thresh
+    buy_large_dollar  = np.where(is_trade & (side == "B") & is_large,  size * price, 0.0)
+    sell_large_dollar = np.where(is_trade & (side == "A") & is_large,  size * price, 0.0)
+    buy_small_dollar  = np.where(is_trade & (side == "B") & ~is_large, size * price, 0.0)
+    sell_small_dollar = np.where(is_trade & (side == "A") & ~is_large, size * price, 0.0)
+
     minute = front.index.floor("1min")
     event_df = pd.DataFrame({
         "minute": minute,
         "mid": mid,
+        "bid": bid_px, "ask": ask_px, "bid_sz": bid_sz, "ask_sz": ask_sz,
         "ofi": e_ofi,
+        "buy_size": buy_size, "sell_size": sell_size,
         "buy_dollar": buy_dollar, "sell_dollar": sell_dollar,
+        "buy_large_dollar": buy_large_dollar, "sell_large_dollar": sell_large_dollar,
+        "buy_small_dollar": buy_small_dollar, "sell_small_dollar": sell_small_dollar,
         "is_trade": is_trade.astype(int),
     })
     agg = event_df.groupby("minute").agg(
         mid_open=("mid", "first"),
         mid_close=("mid", "last"),
+        bid_close=("bid", "last"),
+        ask_close=("ask", "last"),
+        bid_sz_close=("bid_sz", "last"),
+        ask_sz_close=("ask_sz", "last"),
         ofi=("ofi", "sum"),
+        buy_size=("buy_size", "sum"),
+        sell_size=("sell_size", "sum"),
         buy_dollar=("buy_dollar", "sum"),
         sell_dollar=("sell_dollar", "sum"),
+        buy_large_dollar=("buy_large_dollar", "sum"),
+        sell_large_dollar=("sell_large_dollar", "sum"),
+        buy_small_dollar=("buy_small_dollar", "sum"),
+        sell_small_dollar=("sell_small_dollar", "sum"),
         n_trades=("is_trade", "sum"),
+        n_events=("mid", "count"),
     )
     agg["front_sym"] = front_sym
+    agg["dte"] = days_to_expiry
     return agg
 
 

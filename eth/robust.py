@@ -25,6 +25,9 @@ capital          = 1_000_000.0
 vol_target       = 0.15
 vol_lookback     = 200
 
+# frozen in-sample bar density for sizing (see strategy.bars_per_year_sizing)
+bars_per_year_sizing = 4293.003222294825
+
 
 # 1. rebuild dollar-volume bars with is-only threshold
 
@@ -253,10 +256,10 @@ def _trade_pnl(df, position, spread_ticks=1.0):
     return gross_pnl - cost
 
 
-def _vol_target_contracts(df, bars_per_year):
+def _vol_target_contracts(df):
     returns = df["mid_close"].pct_change().mask(df["roll"]).fillna(0)
     rolling_std = returns.rolling(vol_lookback, min_periods=vol_lookback).std().shift(1)
-    annualized_vol = rolling_std * math.sqrt(bars_per_year)
+    annualized_vol = rolling_std * math.sqrt(bars_per_year_sizing)
     notional = contract_mult * df["mid_close"]
     n_target = (vol_target * capital) / (notional * annualized_vol.replace(0, np.nan))
     return n_target.clip(lower=1).fillna(1).values
@@ -276,7 +279,7 @@ def _annualized_sharpe(pnl, bars_per_year):
 
 def run_locked(df, spread_ticks=1.0):
     bars_per_year = _bars_per_year(df)
-    n_contracts = _vol_target_contracts(df, bars_per_year)
+    n_contracts = _vol_target_contracts(df)
     positions = _signal_position_vec(df, signal_bars, entry_threshold, max_hold_bars,
                                 direction_sign, zscore_lookback, n_contracts)
     pnl = _trade_pnl(df, positions, spread_ticks)

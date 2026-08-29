@@ -28,7 +28,7 @@ def main():
     df = pd.read_parquet(panel_path).sort_index()
     df["roll"] = (df["front_sym"] != df["front_sym"].shift(1)).fillna(True)
     years = (df.index.max() - df.index.min()).total_seconds() / (365.25 * 86400)
-    n_contracts = vol_target_contracts(df, len(df) / years)
+    n_contracts = vol_target_contracts(df)
 
     print(f"ETH grid-design sensitivity: quarterly walk-forward under {len(GRID_VARIANTS)} grids")
     print(f"  locked config {LOCKED} is only present in the baseline grid\n")

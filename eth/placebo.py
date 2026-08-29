@@ -26,7 +26,7 @@ def main():
     years = (df.index.max() - df.index.min()).total_seconds() / (365.25 * 86400)
     bars_per_year = len(df) / years
 
-    n_contracts = vol_target_contracts(df, bars_per_year)
+    n_contracts = vol_target_contracts(df)
     events = build_event_calendar()
     trades = simulate(df, n_contracts, use_event_filter=False,
                       use_weekend_filter=False, cap_hours=cap_hours, events=events)

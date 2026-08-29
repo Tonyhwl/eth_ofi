@@ -19,6 +19,8 @@ from strategy import (
 
 TBBO_DIR = ROOT.parent / "data" / "eth_tbbo"
 
+CAP = 10 / 60          # locked 10-minute clock cap
+
 PASSIVE_WINDOW_SECS  = 60
 STAGGER_N_CHILDREN   = 5
 STAGGER_INTERVAL_SECS = 60
@@ -71,9 +73,27 @@ def load_tbbo_day(date_obj):
     }, index=sub.index[valid]).sort_index()
 
 
-def aggressive_fill(tbbo, ts, direction, side, size):
+def decision_pos(tbbo, ts, on_bar=True):
+    """Index position of the book state a decision at ts could actually act on."""
+    if not on_bar:                      # clock-cap exit: fires mid-bar at ts
+        return tbbo.index.searchsorted(ts, side="right") - 1
+    end = ts + pd.Timedelta(seconds=60)
+    pos = tbbo.index.searchsorted(end, side="left") - 1
+    if pos < 0 or tbbo.index[pos] < ts:
+        return -1
+    return pos
+
+
+def leg_time(t, tag, cap_hours):
+    """Timestamp a leg is actually executable: cap exits fire on the clock."""
+    if tag == "exit" and t.exit_reason == "cap" and cap_hours is not None:
+        return t.entry_time + pd.Timedelta(hours=cap_hours), False
+    return (t.entry_time if tag == "entry" else t.exit_time), True
+
+
+def aggressive_fill(tbbo, ts, direction, side, size, on_bar=True):
     """Market order that walks the book, using top-of-book size as a depth proxy."""
-    pos = tbbo.index.searchsorted(ts, side="right") - 1
+    pos = decision_pos(tbbo, ts, on_bar)
     if pos < 0:
         return None
     row = tbbo.iloc[pos]
@@ -99,9 +119,9 @@ def aggressive_fill(tbbo, ts, direction, side, size):
     return float(vwap), float(mid)
 
 
-def passive_fill(tbbo, ts, direction, side, size, window_secs=PASSIVE_WINDOW_SECS):
+def passive_fill(tbbo, ts, direction, side, size, on_bar=True, window_secs=PASSIVE_WINDOW_SECS):
     """Post at the touch and fill only if a trade prints at our price within the window."""
-    pos = tbbo.index.searchsorted(ts, side="right") - 1
+    pos = decision_pos(tbbo, ts, on_bar)
     if pos < 0:
         return None
     row = tbbo.iloc[pos]
@@ -109,8 +129,9 @@ def passive_fill(tbbo, ts, direction, side, size, window_secs=PASSIVE_WINDOW_SEC
     mid = (bid + ask) / 2
     is_buy = (direction == +1 and side == "entry") or (direction == -1 and side == "exit")
     post_price = bid if is_buy else ask
-    end_ts = ts + pd.Timedelta(seconds=window_secs)
-    start_pos = tbbo.index.searchsorted(ts, side="right")
+    decided = tbbo.index[pos]
+    end_ts = decided + pd.Timedelta(seconds=window_secs)
+    start_pos = pos + 1
     end_pos = tbbo.index.searchsorted(end_ts, side="right")
     window = tbbo.iloc[start_pos:end_pos]
     trades = window[window["is_trade"]]
@@ -125,7 +146,7 @@ def passive_fill(tbbo, ts, direction, side, size, window_secs=PASSIVE_WINDOW_SEC
     return float(post_price), float(mid)
 
 
-def staggered_fill(tbbo, ts, direction, side, size,
+def staggered_fill(tbbo, ts, direction, side, size, on_bar=True,
                     n_children=STAGGER_N_CHILDREN, interval_secs=STAGGER_INTERVAL_SECS):
     """Split into n_children equal-size aggressive fills one minute apart."""
     child_size = max(1, int(round(size / n_children)))
@@ -136,7 +157,7 @@ def staggered_fill(tbbo, ts, direction, side, size,
     vwap_sum, mid_first = 0.0, None
     for k, sz in enumerate(sizes):
         child_ts = ts + pd.Timedelta(seconds=k * interval_secs)
-        fill = aggressive_fill(tbbo, child_ts, direction, side, sz)
+        fill = aggressive_fill(tbbo, child_ts, direction, side, sz, on_bar and k == 0)
         if fill is None:
             return None
         if mid_first is None:
@@ -155,10 +176,10 @@ def main():
     df["roll"] = (df["front_sym"] != df["front_sym"].shift(1)).fillna(True)
     years = (df.index.max() - df.index.min()).total_seconds() / (365.25 * 86400)
     bars_per_year = len(df) / years
-    n_contracts = vol_target_contracts(df, bars_per_year)
+    n_contracts = vol_target_contracts(df)
     events = build_event_calendar()
     trades = simulate(df, n_contracts, use_event_filter=False, use_weekend_filter=False,
-                       cap_hours=10/60, events=events)
+                       cap_hours=CAP, events=events)
     oos_trades = [t for t in trades if t.entry_time >= oos_start]
     print(f"  {len(oos_trades):,} OOS trades")
 
@@ -169,8 +190,8 @@ def main():
     # group OOS trades by date so each day's TBBO loads once
     by_day = defaultdict(list)
     for t in oos_trades:
-        by_day[t.entry_time.date()].append(("entry", t))
-        by_day[t.exit_time.date()].append(("exit", t))
+        by_day[leg_time(t, "entry", CAP)[0].tz_convert("UTC").date()].append(("entry", t))
+        by_day[leg_time(t, "exit", CAP)[0].tz_convert("UTC").date()].append(("exit", t))
 
     fills = {"aggressive": {}, "passive": {}, "staggered": {}}
     n_passive_missed = 0
@@ -181,10 +202,10 @@ def main():
         if tbbo is None:
             continue
         for tag, t in day_legs:
-            ts = t.entry_time if tag == "entry" else t.exit_time
-            fill_aggressive = aggressive_fill(tbbo, ts, t.direction, tag, t.size)
-            fill_passive = passive_fill(tbbo,    ts, t.direction, tag, t.size)
-            fill_staggered = staggered_fill(tbbo,  ts, t.direction, tag, t.size)
+            ts, on_bar = leg_time(t, tag, CAP)
+            fill_aggressive = aggressive_fill(tbbo, ts, t.direction, tag, t.size, on_bar)
+            fill_passive = passive_fill(tbbo,    ts, t.direction, tag, t.size, on_bar)
+            fill_staggered = staggered_fill(tbbo,  ts, t.direction, tag, t.size, on_bar)
             if fill_aggressive is not None: fills["aggressive"].setdefault(id(t), {})[tag] = fill_aggressive
             if fill_passive is not None: fills["passive"].setdefault(id(t), {})[tag] = fill_passive
             else:                n_passive_missed += 1

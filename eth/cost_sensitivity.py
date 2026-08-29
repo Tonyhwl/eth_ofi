@@ -57,7 +57,7 @@ def main():
     print()
 
     events      = build_event_calendar()
-    n_contracts = vol_target_contracts(df, bars_per_year)
+    n_contracts = vol_target_contracts(df)
     trades      = simulate(df, n_contracts, use_event_filter=False,
                            use_weekend_filter=False, cap_hours=10/60, events=events)
     print(f"Simulated {len(trades):,} trades.")

@@ -19,6 +19,9 @@ tick_size        = 0.05
 capital          = 1_000_000.0
 vol_target       = 0.15
 vol_lookback     = 200
+
+# frozen in-sample bar density for sizing (see strategy.bars_per_year_sizing)
+bars_per_year_sizing = 4293.003222294825
 oos_start = pd.Timestamp("2024-01-01", tz="US/Eastern")
 
 panel_path = root / "results" / "eth_ofi_vbars_isfix.parquet"
@@ -71,10 +74,10 @@ def signal_position(df, n_contracts_series):
     return pd.Series(pos, index=df.index, dtype=float)
 
 
-def vol_target_contracts(df, bars_per_year):
+def vol_target_contracts(df):
     returns = df["mid_close"].pct_change().mask(df["roll"]).fillna(0)
     rolling_std = returns.rolling(vol_lookback, min_periods=vol_lookback).std().shift(1)
-    ann_vol = rolling_std * math.sqrt(bars_per_year)
+    ann_vol = rolling_std * math.sqrt(bars_per_year_sizing)
     notional_per_contract = contract_mult * df["mid_close"]
     n_target = (vol_target * capital) / (notional_per_contract * ann_vol.replace(0, np.nan))
     return n_target.clip(lower=1).fillna(1)
@@ -174,7 +177,7 @@ def run_mode(df, df_oos, bars_per_year, mode, spread_ticks):
     elif mode == "fixed_4":
         n_contracts = pd.Series(4.0, index=df.index)
     elif mode == "vol_target":
-        n_contracts = vol_target_contracts(df, bars_per_year)
+        n_contracts = vol_target_contracts(df)
     else:
         raise ValueError(mode)
     pos = signal_position(df, n_contracts)

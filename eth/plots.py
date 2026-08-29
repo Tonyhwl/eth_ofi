@@ -64,7 +64,7 @@ def _oos_trades_and_pnl():
     df["roll"] = (df["front_sym"] != df["front_sym"].shift(1)).fillna(True)
     years = (df.index.max() - df.index.min()).total_seconds() / (365.25 * 86400)
     bars_per_year_panel = len(df) / years
-    n_contracts = vol_target_contracts(df, bars_per_year_panel)
+    n_contracts = vol_target_contracts(df)
     events = build_event_calendar()
     trades = simulate(df, n_contracts, use_event_filter=False, use_weekend_filter=False,
                       cap_hours=10/60, events=events)

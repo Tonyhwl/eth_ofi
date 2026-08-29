@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from strategy import (
     contract_mult, tick_size, spread_ticks, vol_target, vol_lookback,
     build_event_calendar, simulate, pnl_from_trades, panel_path,
+    bars_per_year_sizing,
 )
 
 oos_start = pd.Timestamp("2024-01-01", tz="US/Eastern")
@@ -35,12 +36,12 @@ def load_panel():
     return df, bars_per_year
 
 
-def vol_target_contracts(df, bars_per_year, cap):
-    """Sizing positions."""
+def vol_target_contracts(df, cap):
+    """Size positions on the frozen in-sample bar density."""
 
     ret         = df["mid_close"].pct_change().mask(df["roll"]).fillna(0)
     rolling_std = ret.rolling(vol_lookback, min_periods=vol_lookback).std().shift(1)
-    ann_vol     = rolling_std * math.sqrt(bars_per_year)
+    ann_vol     = rolling_std * math.sqrt(bars_per_year_sizing)
     notional    = contract_mult * df["mid_close"]
     n_target    = (vol_target * cap) / (notional * ann_vol.replace(0, np.nan))
 
@@ -130,7 +131,7 @@ def main():
         print(f"  {'-'*65}")
 
         for cap in capitals:
-            n_contracts = vol_target_contracts(df, bars_per_year, cap)
+            n_contracts = vol_target_contracts(df, cap)
             trades = simulate(df, n_contracts, use_event_filter=False, use_weekend_filter=False,
                               cap_hours=cap_hours_default, events=events)
             trades_oos = [t for t in trades if t.entry_time >= oos_start]

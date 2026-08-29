@@ -23,6 +23,18 @@ N_SHUFFLE_SEEDS = 50    # seeds for the sign-randomised placebo baseline
 N_BOOT = 2000           # day-block bootstrap resamples for honest decay SEs
 
 
+def decision_bbo(tbbo_df, ts):
+    """BBO at the last event inside the bar's final minute, i.e. the decision instant."""
+    if tbbo_df is None or len(tbbo_df) == 0:
+        return None
+    pos = tbbo_df.index.searchsorted(ts + pd.Timedelta(seconds=60), side="left") - 1
+    if pos < 0 or tbbo_df.index[pos] < ts:
+        return None
+    row = tbbo_df.iloc[pos]
+    return {"bid": float(row["bid"]), "ask": float(row["ask"]),
+            "ts": tbbo_df.index[pos]}
+
+
 def bbo_at_fresh(tbbo_df, ts):
     """BBO at or before ts, with matched timestamp."""
     if tbbo_df is None or len(tbbo_df) == 0:
@@ -76,7 +88,7 @@ def main():
     df["roll"] = (df["front_sym"] != df["front_sym"].shift(1)).fillna(True)
     years = (df.index.max() - df.index.min()).total_seconds() / (365.25 * 86400)
     bars_per_year = len(df) / years
-    n_contracts = vol_target_contracts(df, bars_per_year)
+    n_contracts = vol_target_contracts(df)
     events = build_event_calendar()
     trades = simulate(df, n_contracts, use_event_filter=False, use_weekend_filter=False,
                       cap_hours=10/60, events=events)
@@ -107,12 +119,13 @@ def main():
             continue
         for index in day_indices:
             ts_entry, _ = entries[index]
-            bbo0 = bbo_at_fresh(tbbo, ts_entry)
+            bbo0 = decision_bbo(tbbo, ts_entry)
             if bbo0 is None:
                 continue
             mid0 = (bbo0["bid"] + bbo0["ask"]) / 2
+            t_zero = bbo0["ts"]
             for j, h in enumerate(HORIZONS_MIN):
-                ts = ts_entry + pd.Timedelta(seconds=int(h * 60))
+                ts = t_zero + pd.Timedelta(seconds=int(h * 60))
                 bbo_h = bbo_at_fresh(tbbo, ts)
                 if bbo_h is None:
                     continue

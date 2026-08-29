@@ -37,7 +37,7 @@ def main():
     df = pd.read_parquet(panel_path).sort_index()
     df["roll"] = (df["front_sym"] != df["front_sym"].shift(1)).fillna(True)
     bars_per_year_panel = bars_per_year(df.index)
-    n_contracts = vol_target_contracts(df, bars_per_year_panel)
+    n_contracts = vol_target_contracts(df)
     events = build_event_calendar()
 
     is_mask           = df.index < oos_start

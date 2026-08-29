@@ -191,7 +191,7 @@ def main():
     bars_per_year_is    = _bars_per_year(df_is)
     bars_per_year_oos   = _bars_per_year(df_oos)
     events    = build_event_calendar()
-    n_contracts = vol_target_contracts(df, bars_per_year_panel)
+    n_contracts = vol_target_contracts(df)
     is_index    = np.where(df.index <  oos_start)[0]
     oos_index   = np.where(df.index >= oos_start)[0]
 

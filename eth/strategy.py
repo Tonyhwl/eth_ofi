@@ -31,6 +31,11 @@ capital      = 1_000_000.0
 vol_target   = 0.15
 vol_lookback = 200
 
+# bar density used to annualise vol for sizing. frozen on the in-sample window
+# only, so appending out-of-sample data cannot retroactively rescale historical
+# position sizes. 12,379 IS bars over 2.883529 years.
+bars_per_year_sizing = 4293.003222294825
+
 oos_start = pd.Timestamp("2024-01-01", tz="US/Eastern")
 
 # event filter (minutes around each macro release)
@@ -131,10 +136,11 @@ def in_friday_window(ts, mins_before):
     return 0 <= delta <= mins_before
 
 
-def vol_target_contracts(df, bars_per_year):
+def vol_target_contracts(df):
+    """Vol-targeted contract sizing on the frozen in-sample bar density."""
     returns     = df["mid_close"].pct_change().mask(df["roll"]).fillna(0)
     rolling_std = returns.rolling(vol_lookback, min_periods=vol_lookback).std().shift(1)
-    ann_vol     = rolling_std * math.sqrt(bars_per_year)
+    ann_vol     = rolling_std * math.sqrt(bars_per_year_sizing)
     notional    = contract_mult * df["mid_close"]
     n_contracts = (vol_target * capital) / (notional * ann_vol.replace(0, np.nan))
     return n_contracts.clip(lower=1).fillna(1)
@@ -306,7 +312,7 @@ def main():
     df["roll"] = (df["front_sym"] != df["front_sym"].shift(1)).fillna(True)
     years = (df.index.max() - df.index.min()).total_seconds() / (365.25 * 86400)
     bars_per_year = len(df) / years
-    n_contracts = vol_target_contracts(df, bars_per_year)
+    n_contracts = vol_target_contracts(df)
     df_oos  = df.loc[df.index >= oos_start]
     events  = build_event_calendar()
 
