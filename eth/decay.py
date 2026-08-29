@@ -24,11 +24,15 @@ N_BOOT = 2000           # day-block bootstrap resamples for honest decay SEs
 
 
 def decision_bbo(tbbo_df, ts):
-    """BBO at the last event inside the bar's final minute, i.e. the decision instant."""
+    """BBO at the first event from which the bar is known complete (ts + 60s).
+
+    mid_close comes from the last event inside the bar's final minute, but it is
+    only knowable once that minute has elapsed, so t=0 is anchored at ts+60s.
+    """
     if tbbo_df is None or len(tbbo_df) == 0:
         return None
-    pos = tbbo_df.index.searchsorted(ts + pd.Timedelta(seconds=60), side="left") - 1
-    if pos < 0 or tbbo_df.index[pos] < ts:
+    pos = tbbo_df.index.searchsorted(ts + pd.Timedelta(seconds=60), side="left")
+    if pos >= len(tbbo_df):
         return None
     row = tbbo_df.iloc[pos]
     return {"bid": float(row["bid"]), "ask": float(row["ask"]),

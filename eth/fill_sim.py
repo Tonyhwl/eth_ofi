@@ -74,14 +74,16 @@ def load_tbbo_day(date_obj):
 
 
 def decision_pos(tbbo, ts, on_bar=True):
-    """Index position of the book state a decision at ts could actually act on."""
+    """Index position of the book state a decision at ts could actually act on.
+
+    A bar's mid_close comes from the last event inside its final minute, but that
+    event is only known to be the last one once the next minute begins. So a
+    bar-boundary decision is executable from the first tick at or after ts+60s.
+    """
     if not on_bar:                      # clock-cap exit: fires mid-bar at ts
         return tbbo.index.searchsorted(ts, side="right") - 1
-    end = ts + pd.Timedelta(seconds=60)
-    pos = tbbo.index.searchsorted(end, side="left") - 1
-    if pos < 0 or tbbo.index[pos] < ts:
-        return -1
-    return pos
+    pos = tbbo.index.searchsorted(ts + pd.Timedelta(seconds=60), side="left")
+    return pos if pos < len(tbbo) else -1
 
 
 def leg_time(t, tag, cap_hours):
