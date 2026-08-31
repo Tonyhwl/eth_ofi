@@ -50,46 +50,50 @@ mpl.rcParams.update({
     "savefig.facecolor": bg,
 })
 
-DUR_TICKS = [2, 5, 10, 30, 60, 120, 240]
+BPD_TICKS = [1, 3, 10, 30, 100, 300, 1000]
+FLOOR_BPD = 200   # beyond this most bars complete within a single minute
+
+
+def load_sweep():
+    cols = ["bars_per_day", "beta0", "r2", "median_dur_min"]
+    d = pd.concat([pd.read_csv(root / "results" / "bar_scale.csv")[cols],
+                   pd.read_csv(root / "results" / "bar_scale_ext.csv")[cols]])
+    return d.sort_values("bars_per_day")
 
 
 def scale_curve():
-    d = pd.read_csv(root / "results" / "bar_scale.csv").sort_values("median_dur_min")
+    d = load_sweep()
     base = d[d["bars_per_day"] == 10].iloc[0]
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.0), gridspec_kw={"wspace": 0.28})
 
-    ax = axes[0]
-    ax.plot(d["median_dur_min"], d["r2"], color=ink, linewidth=1.4,
-            marker="o", markersize=4.5)
-    ax.plot(base["median_dur_min"], base["r2"], marker="o", markersize=9,
-            markerfacecolor="none", markeredgecolor=acc1, markeredgewidth=1.6,
-            linestyle="none")
-    ax.annotate("paper calibration\n(10 bars/day)",
-                (base["median_dur_min"], base["r2"]),
-                textcoords="offset points", xytext=(10, -28),
-                fontsize=9, color=acc1)
-    ax.set_xscale("log")
-    ax.set_xticks(DUR_TICKS)
-    ax.set_xticklabels([str(t) for t in DUR_TICKS])
-    ax.set_ylim(0, 0.40)
-    ax.set_xlabel("Median OOS bar duration (minutes)")
-    ax.set_ylabel("OOS $R^2$")
-    ax.set_title("Explanatory power across bar scales", loc="left")
+    for ax, col, ylim, ylab, title in [
+            (axes[0], "r2", 0.40, "OOS $R^2$",
+             "Explanatory power across bar scales"),
+            (axes[1], "beta0", 0.30,
+             r"$\hat\beta_0$ (mid-quote $\Delta$ per contract)",
+             "Contemporaneous slope across bar scales")]:
+        ax.axvspan(FLOOR_BPD, 1300, color=grid_col, alpha=0.55, zorder=0)
+        ax.text(450, ylim * 0.06, "one-minute\ngrid binds", fontsize=8,
+                color=off, ha="center")
+        ax.plot(d["bars_per_day"], d[col], color=ink, linewidth=1.4,
+                marker="o", markersize=4.5)
+        ax.plot(base["bars_per_day"], base[col], marker="o", markersize=9,
+                markerfacecolor="none", markeredgecolor=acc1, markeredgewidth=1.6,
+                linestyle="none")
+        ax.set_xscale("log")
+        ax.set_xticks(BPD_TICKS)
+        ax.set_xticklabels([str(t) for t in BPD_TICKS])
+        ax.set_xlim(0.8, 1300)
+        ax.set_ylim(0, ylim)
+        ax.set_xlabel("Target bars per day")
+        ax.set_ylabel(ylab)
+        ax.set_title(title, loc="left")
 
-    ax = axes[1]
-    ax.plot(d["median_dur_min"], d["beta0"], color=ink, linewidth=1.4,
-            marker="o", markersize=4.5)
-    ax.plot(base["median_dur_min"], base["beta0"], marker="o", markersize=9,
-            markerfacecolor="none", markeredgecolor=acc1, markeredgewidth=1.6,
-            linestyle="none")
-    ax.set_xscale("log")
-    ax.set_xticks(DUR_TICKS)
-    ax.set_xticklabels([str(t) for t in DUR_TICKS])
-    ax.set_ylim(0, 0.30)
-    ax.set_xlabel("Median OOS bar duration (minutes)")
-    ax.set_ylabel(r"$\hat\beta_0$ (mid-quote $\Delta$ per contract)")
-    ax.set_title("Contemporaneous slope across bar scales", loc="left")
+    axes[0].annotate("paper calibration\n(10 bars/day)",
+                     (base["bars_per_day"], base["r2"]),
+                     textcoords="offset points", xytext=(10, -28),
+                     fontsize=9, color=acc1)
 
     out = figs / "fig6_barscale.png"
     fig.savefig(out)
@@ -98,7 +102,8 @@ def scale_curve():
 
 
 def quarterly_heatmap():
-    q = pd.read_csv(root / "results" / "bar_scale_quarterly.csv")
+    q = pd.concat([pd.read_csv(root / "results" / "bar_scale_quarterly.csv"),
+                   pd.read_csv(root / "results" / "bar_scale_ext_quarterly.csv")])
     piv = q.pivot(index="bars_per_day", columns="quarter", values="r2").sort_index()
 
     fig, ax = plt.subplots(figsize=(11, 4.6))

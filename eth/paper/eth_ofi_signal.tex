@@ -100,12 +100,12 @@ Figure~\ref{fig:impact} shows the out-of-sample relation. The IS and OOS $R^2$ a
 
 This regression is contemporaneous: it measures how the mid quote moves together with the flow inside a bar (median OOS bar duration ${\approx} 17$ minutes), not whether flow forecasts the next bar. Regressing the next bar's mid-quote change on lagged OFI alone gives $R^2 < 0.001$ out of sample, so the content of Table~\ref{tab:impact} is price impact rather than forecastability. Whether the flow carries predictive content at horizons inside the bar is a question the bar regression cannot resolve.
 
-The ten-bars-per-day calibration is a convention rather than a fitted parameter, and the result does not depend on it. Rebuilding the panel at every target from one to one hundred bars per day, with the threshold recomputed on the in-sample window at each scale, leaves the out-of-sample $R^2$ between $0.29$ and $0.32$ across median bar durations from almost four hours down to two minutes, while $\hat\beta_0$ rises from $+0.17$ on the coarsest bars to $+0.24$ on the finest (Figure~\ref{fig:barscale}). No bar size in this range would change the conclusions of Table~\ref{tab:impact}.
+The ten-bars-per-day calibration is a convention rather than a fitted parameter, and the result does not depend on it. Rebuilding the panel at every target from one to one thousand bars per day, with the threshold recomputed on the in-sample window at each scale, leaves the out-of-sample $R^2$ between $0.29$ and $0.32$ everywhere, while $\hat\beta_0$ rises from $+0.17$ on the coarsest bars to $+0.25$ on the finest (Figure~\ref{fig:barscale}). Median durations run from almost four hours down to the panel's one-minute resolution, which binds beyond roughly two hundred bars per day: past that point most bars complete within a single minute, so the finest scales are effectively one-minute time bars. No bar size in this range would change the conclusions of Table~\ref{tab:impact}.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{fig6_barscale.png}
-\caption{Out-of-sample $R^2$ (left) and contemporaneous slope $\hat\beta_0$ (right) as the bar threshold is varied from one to one hundred target bars per day, plotted against the resulting median OOS bar duration. The threshold is recalibrated on the in-sample window at each scale; the circled point is the ten-bars-per-day calibration used throughout the paper.}
+\caption{Out-of-sample $R^2$ (left) and contemporaneous slope $\hat\beta_0$ (right) as the bar threshold is varied from one to one thousand target bars per day, recalibrated on the in-sample window at each scale. The circled point is the ten-bars-per-day calibration used throughout the paper; in the shaded region the one-minute grid binds and most bars are single minutes.}
 \label{fig:barscale}
 \end{figure}
 
