@@ -59,7 +59,7 @@ For each bar the following quantities are computed:
         -(q^A_i - q^A_{i-1})& \text{if } p^A_i = p^A_{i-1}.
     \end{cases}
     \end{align*}
-     The bar OFI is the unnormalized sum over all events in the bar,
+     The bar OFI is the unnormalised sum over all events in the bar,
     \[ O_t = \sum_{i \in \text{bar } t} e_i. \]
     \item \texttt{mid\_close}: the mid quote $(p^B + p^A)/2$ at the bar boundary.
     \item \texttt{d\_mid}: the change in mid quote since the previous bar.
@@ -110,7 +110,7 @@ Median durations run from almost four hours down to the panel's one-minute resol
 
 Because the one-minute floor is a property of the panel, not the data, the sweep is repeated on a ten-second event grid rebuilt from the raw TBBO stream for the out-of-sample window; the rebuilt buckets aggregate back to the minute panel exactly. Dollar-volume bars on this grid, from ten to five thousand bars per day, hold the out-of-sample $R^2$ between $0.31$ and $0.32$ (Figure~\ref{fig:barscale}).
 
-On plain ten-second intervals, the sampling grid of Cont et al.\ (2014), the regression gives $\hat\beta_0 = +0.26$ ($t = 189$, $R^2 = 0.32$) on the 1.6 million ten-second intervals that contain at least one trade. The gap to the equity two-thirds is therefore not an artifact of bar size, though it is partly one of estimation design: their two-thirds is a mean over half-hour subsample regressions, while the $0.32$ pools the full out-of-sample window under one coefficient.
+On plain ten-second intervals, the sampling grid of Cont et al.\ (2014), the regression gives $\hat\beta_0 = +0.26$ ($t = 189$, $R^2 = 0.32$) on the 1.6 million ten-second intervals that contain at least one trade. The gap to the equity two-thirds is therefore not an artefact of bar size, though it is partly one of estimation design: their two-thirds is a mean over half-hour subsample regressions, while the $0.32$ pools the full out-of-sample window under one coefficient.
 
 Estimated their way, the mean $R^2$ over half-hour windows on the ten-second grid is $0.54$ (windows with at least thirty such intervals), with the caveat that TBBO observes the book only at trade instants. The interquartile range across windows is $0.48$ to $0.62$, and the yearly means are $0.53$ to $0.55$.
 
@@ -136,7 +136,7 @@ Impact in this market is concave in flow, with an exponent well below one and co
 
 Impact also moves with the state of the book. Splitting the out-of-sample bars into terciles by the quoted spread at the bar boundary and estimating the regression in basis-point returns, $\hat\beta_0$ rises monotonically from $0.58$ bp per contract in the narrow-spread tercile (median $2.2$ bp) through $0.76$ in the middle to $1.03$ in the wide (median $5.9$ bp). A continuous interaction of OFI with the spread carries $t = 17$ and holds within each calendar year separately ($t$ of $8.3$, $8.2$, and $7.0$ in 2024, 2025, and 2026).
 
-Wide spreads and large moves are both symptoms of volatile periods, so the interaction is re-estimated against that confound: with the spread lagged one bar it carries $t = 10.5$, with a control for trailing twenty-bar realized volatility added it carries $t = 7.1$, and it holds inside each volatility tercile ($t$ of $2.8$, $4.5$, and $5.8$ from low to high volatility). A wide spread marks a thin book, so this is the inverse-depth scaling of Cont et al.\ (2014), observed at the touch.
+Wide spreads and large moves are both symptoms of volatile periods, so the interaction is re-estimated against that confound: with the spread lagged one bar it carries $t = 10.5$, with a control for trailing twenty-bar realised volatility added it carries $t = 7.1$, and it holds inside each volatility tercile ($t$ of $2.8$, $4.5$, and $5.8$ from low to high volatility). A wide spread marks a thin book, so this is the inverse-depth scaling of Cont et al.\ (2014), observed at the touch.
 
 \section{Conclusion}
 
