@@ -89,7 +89,7 @@ Out-of-sample 2024--26 & 28{,}711 & $+0.215$ & $+58.1$ & $-0.026$ & $-13.3$ & 0.
 \label{tab:impact}
 \end{table}
 
-Figure~\ref{fig:impact} shows the out-of-sample relation. The IS and OOS $R^2$ are nearly identical ($0.31$ and $0.30$), while the slope itself is less stable, moving from $+0.300$ in-sample to $+0.215$ out-of-sample. Both $R^2$ figures are below the two-thirds level of Cont et al.\ (2014) for liquid US equities, albeit at a different sampling frequency.
+Figure~\ref{fig:impact} shows the out-of-sample relation. The IS and OOS $R^2$ are nearly identical ($0.31$ and $0.30$), while the slope itself is less stable, moving from $+0.300$ in-sample to $+0.215$ out-of-sample. Both $R^2$ figures are below the two-thirds level of Cont et al.\ (2014) for liquid US equities, albeit at a different sampling frequency; Section~\ref{sec:barscale} repeats the comparison at their ten-second interval.
 
 \begin{figure}[t]
 \centering
@@ -100,7 +100,12 @@ Figure~\ref{fig:impact} shows the out-of-sample relation. The IS and OOS $R^2$ a
 
 This regression is contemporaneous: it measures how the mid quote moves together with the flow inside a bar (median OOS bar duration ${\approx} 17$ minutes), not whether flow forecasts the next bar. Regressing the next bar's mid-quote change on lagged OFI alone gives $R^2 < 0.001$ out of sample, so the content of Table~\ref{tab:impact} is price impact rather than forecastability. Whether the flow carries predictive content at horizons inside the bar is a question the bar regression cannot resolve.
 
+\section{Robustness to the bar scale}
+\label{sec:barscale}
+
 The ten-bars-per-day calibration is a convention rather than a fitted parameter, and the result does not depend on it. Rebuilding the panel at every target from one to one thousand bars per day, with the threshold recomputed on the in-sample window at each scale, leaves the out-of-sample $R^2$ between $0.29$ and $0.32$ everywhere, while $\hat\beta_0$ rises from $+0.17$ on the coarsest bars to $+0.25$ on the finest (Figure~\ref{fig:barscale}). Median durations run from almost four hours down to the panel's one-minute resolution, which binds beyond roughly two hundred bars per day: past that point most bars complete within a single minute, so the finest scales are effectively one-minute time bars. No bar size in this range would change the conclusions of Table~\ref{tab:impact}.
+
+The one-minute floor is a property of the panel, not the tape, so the sweep is repeated on a ten-second event grid rebuilt from the raw TBBO stream for the out-of-sample window; the rebuilt buckets aggregate back to the minute panel exactly. Dollar-volume bars on this grid, from ten to five thousand bars per day, hold the out-of-sample $R^2$ between $0.31$ and $0.32$, and on plain ten-second intervals, the sampling grid of Cont et al.\ (2014), the regression gives $\hat\beta_0 = +0.26$ ($t = 189$, $R^2 = 0.32$) on 1.6 million trade-active buckets. The gap to the equity two-thirds is therefore not an artifact of bar size: at matching intervals this contract's flow explains about half as much of the mid-quote variation as Cont et al.\ report for liquid US equities, with the caveat that TBBO observes the book only at trade instants. The lagged coefficient shrinks steadily as bars get finer and is indistinguishable from zero on the ten-second grid ($t = -0.3$), so the small negative $\hat\beta_1$ of Table~\ref{tab:impact} reflects netting within coarse bars rather than a persistent reversal in the flow.
 
 \begin{figure}[H]
 \centering
