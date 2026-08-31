@@ -270,7 +270,7 @@ def fig5_impact():
                 label="binned mean, 25 quantile bins")
     ax.set_xlabel("Bar OFI")
     ax.set_ylabel("Bar mid-quote change")
-    ax.set_title("OOS signal impact: bar mid-quote change against contemporaneous OFI",
+    ax.set_title("OOS price impact: bar mid-quote change against contemporaneous OFI",
                  loc="left")
     ax.legend(loc="upper left")
     ax.set_xlim(bin_x.min() - xpad, bin_x.max() + xpad)

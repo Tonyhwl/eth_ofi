@@ -50,19 +50,21 @@ mpl.rcParams.update({
     "savefig.facecolor": bg,
 })
 
-BPD_TICKS = [1, 3, 10, 30, 100, 300, 1000]
-FLOOR_BPD = 200   # beyond this most bars complete within a single minute
+BPD_TICKS = [1, 3, 10, 30, 100, 300, 1000, 5000]
+FLOOR_MIN_BPD = 200    # minute grid: beyond this most bars are single minutes
+FLOOR_10S_BPD = 2000   # ten-second grid: beyond this most bars are single buckets
 
 
 def load_sweep():
-    cols = ["bars_per_day", "beta0", "r2", "median_dur_min"]
+    cols = ["bars_per_day", "beta0", "r2"]
     d = pd.concat([pd.read_csv(root / "results" / "bar_scale.csv")[cols],
                    pd.read_csv(root / "results" / "bar_scale_ext.csv")[cols]])
-    return d.sort_values("bars_per_day")
+    sub = pd.read_csv(root / "results" / "bar_scale_sub.csv")[cols].dropna()
+    return d.sort_values("bars_per_day"), sub.sort_values("bars_per_day")
 
 
 def scale_curve():
-    d = load_sweep()
+    d, sub = load_sweep()
     base = d[d["bars_per_day"] == 10].iloc[0]
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.0), gridspec_kw={"wspace": 0.28})
@@ -73,26 +75,32 @@ def scale_curve():
             (axes[1], "beta0", 0.30,
              r"$\hat\beta_0$ (mid-quote $\Delta$ per contract)",
              "Contemporaneous slope across bar scales")]:
-        ax.axvspan(FLOOR_BPD, 1300, color=grid_col, alpha=0.55, zorder=0)
-        ax.text(450, ylim * 0.06, "one-minute\ngrid binds", fontsize=8,
+        ax.axvspan(FLOOR_MIN_BPD, FLOOR_10S_BPD, color=grid_col, alpha=0.55, zorder=0)
+        ax.axvspan(FLOOR_10S_BPD, 7500, color=grid_col, alpha=0.30, zorder=0)
+        ax.text(600, ylim * 0.06, "1-min grid\nbinds", fontsize=7.5,
+                color=off, ha="center")
+        ax.text(3800, ylim * 0.06, "10-s grid\nbinds", fontsize=7.5,
                 color=off, ha="center")
         ax.plot(d["bars_per_day"], d[col], color=ink, linewidth=1.4,
-                marker="o", markersize=4.5)
+                marker="o", markersize=4.5, label="one-minute panel")
+        ax.plot(sub["bars_per_day"], sub[col], color=acc2, linewidth=1.3,
+                marker="s", markersize=3.8, label="ten-second rebuild")
         ax.plot(base["bars_per_day"], base[col], marker="o", markersize=9,
                 markerfacecolor="none", markeredgecolor=acc1, markeredgewidth=1.6,
                 linestyle="none")
         ax.set_xscale("log")
         ax.set_xticks(BPD_TICKS)
         ax.set_xticklabels([str(t) for t in BPD_TICKS])
-        ax.set_xlim(0.8, 1300)
+        ax.set_xlim(0.8, 7500)
         ax.set_ylim(0, ylim)
         ax.set_xlabel("Target bars per day")
         ax.set_ylabel(ylab)
         ax.set_title(title, loc="left")
 
+    axes[0].legend(loc="center left", fontsize=8)
     axes[0].annotate("paper calibration\n(10 bars/day)",
                      (base["bars_per_day"], base["r2"]),
-                     textcoords="offset points", xytext=(10, -28),
+                     textcoords="offset points", xytext=(8, -30),
                      fontsize=9, color=acc1)
 
     out = figs / "fig6_barscale.png"
