@@ -26,7 +26,7 @@
 \maketitle
 
 \begin{abstract}
-\noindent We study Order Flow Imbalance (Cont, Kukanov, and Stoikov, 2014) on CME Ether futures from February 2021 to August 2026. On 28{,}711 out-of-sample dollar-volume bars, an OLS regression of bar mid-quote change on contemporaneous and one-bar lagged OFI with Newey-West HAC standard errors yields a contemporaneous coefficient $\hat{\beta}_0 = +0.215$ ($t = 58.1$, $R^2 = 0.30$), against $+0.300$ and $R^2 = 0.31$ in sample. The regression is contemporaneous, so it measures price impact rather than forecasting power: used on its own as a predictor, lagged OFI explains essentially none of the following bar's move ($R^2 < 0.001$ out of sample). OFI is a strong descriptor of price formation on this contract; it is not, by itself, a trading signal.
+\noindent We study Order Flow Imbalance (Cont, Kukanov, and Stoikov, 2014) on CME Ether futures from February 2021 to August 2026. On 28{,}711 out-of-sample dollar-volume bars, an OLS regression of bar mid-quote change on contemporaneous and one-bar lagged OFI with Newey-West HAC standard errors yields a contemporaneous coefficient $\hat{\beta}_0 = +0.215$ ($t = 58.1$, $R^2 = 0.30$), against $+0.300$ and $R^2 = 0.31$ in sample. The fit does not depend on the bar construction: rebuilt at scales from ten-second intervals to bars spanning hours, the out-of-sample $R^2$ stays between $0.29$ and $0.32$. The regression is contemporaneous, so it measures price impact rather than forecasting power: used on its own as a predictor, lagged OFI explains essentially none of the following bar's move ($R^2 < 0.001$ out of sample). OFI is a strong descriptor of price formation on this contract; it is not, by itself, a trading signal.
 \end{abstract}
 
 \section{Introduction}
