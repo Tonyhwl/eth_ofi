@@ -59,7 +59,8 @@ For each bar the following quantities are computed:
         -(q^A_i - q^A_{i-1})& \text{if } p^A_i = p^A_{i-1}.
     \end{cases}
     \end{align*}
-     The bar OFI is the unnormalized sum over all events in the bar, $O_t = \sum_{i \in \text{bar } t} e_i$.
+     The bar OFI is the unnormalized sum over all events in the bar,
+    \[ O_t = \sum_{i \in \text{bar } t} e_i. \]
     \item \texttt{mid\_close}: the mid quote $(p^B + p^A)/2$ at the bar boundary.
     \item \texttt{d\_mid}: the change in mid quote since the previous bar.
 \end{itemize}
@@ -125,11 +126,17 @@ Beyond about five bars per day the lagged coefficient shrinks steadily as bars g
 \section{Shape and state dependence}
 \label{sec:shape}
 
-The tail attenuation in Figure~\ref{fig:impact} can be given a number. Replacing the linear term with a power law, $\Delta p_t = \alpha + b\,\mathrm{sign}(O_t)\,|O_t|^{\gamma} + \varepsilon_t$, and profiling $\gamma$ by least squares gives $\hat\gamma = 0.58$ (day-block bootstrap 95\% confidence interval $0.54$ to $0.60$), and raises the univariate out-of-sample $R^2$ from $0.29$ to $0.32$.
+The tail attenuation in Figure~\ref{fig:impact} can be given a number. Replacing the linear term with a power law,
+\begin{equation}
+\Delta p_t = \alpha + b\,\mathrm{sign}(O_t)\,|O_t|^{\gamma} + \varepsilon_t,
+\end{equation}
+and profiling $\gamma$ by least squares gives $\hat\gamma = 0.58$ (day-block bootstrap 95\% confidence interval $0.54$ to $0.60$), and raises the univariate out-of-sample $R^2$ from $0.29$ to $0.32$.
 
-Impact in this market is concave in flow, with an exponent close to the $3/5$ that Almgren et al.\ (2005) estimate for equity metaorder impact and well below one; the linear $\hat\beta_0$ of Table~\ref{tab:impact} is the local slope of this curve at typical flows. The relation is symmetric in sign: separate slopes on positive and negative OFI come out at $+0.215$ and $+0.214$, and their difference carries $t = 0.06$.
+Impact in this market is concave in flow, with an exponent well below one and consistent with the $3/5$ that Almgren et al.\ (2005) estimate for equity metaorder impact, though their object is a parent order worked over time and ours is the net flow of a bar. The linear $\hat\beta_0$ of Table~\ref{tab:impact} is the local slope of this curve at typical flows. The relation is symmetric in sign: separate slopes on positive and negative OFI come out at $+0.215$ and $+0.214$, and their difference carries $t = 0.06$.
 
-Impact also moves with the state of the book. Splitting the out-of-sample bars into terciles by the quoted spread at the bar boundary and estimating the regression in basis-point returns, $\hat\beta_0$ rises monotonically from $0.58$ bp per contract in the narrow-spread tercile (median $2.2$ bp) through $0.76$ in the middle to $1.03$ in the wide (median $5.9$ bp). A continuous interaction of OFI with the spread carries $t = 17$ and holds within each calendar year separately ($t$ of $8.3$, $8.2$, and $7.0$ in 2024, 2025, and 2026). A wide spread marks a thin book, so this is the inverse-depth scaling of Cont et al.\ (2014), observed at the touch.
+Impact also moves with the state of the book. Splitting the out-of-sample bars into terciles by the quoted spread at the bar boundary and estimating the regression in basis-point returns, $\hat\beta_0$ rises monotonically from $0.58$ bp per contract in the narrow-spread tercile (median $2.2$ bp) through $0.76$ in the middle to $1.03$ in the wide (median $5.9$ bp). A continuous interaction of OFI with the spread carries $t = 17$ and holds within each calendar year separately ($t$ of $8.3$, $8.2$, and $7.0$ in 2024, 2025, and 2026).
+
+Wide spreads and large moves are both symptoms of volatile periods, so the interaction is re-estimated against that confound: with the spread lagged one bar it carries $t = 10.5$, with a control for trailing twenty-bar realized volatility added it carries $t = 7.1$, and it holds inside each volatility tercile ($t$ of $2.8$, $4.5$, and $5.8$ from low to high volatility). A wide spread marks a thin book, so this is the inverse-depth scaling of Cont et al.\ (2014), observed at the touch.
 
 \section{Conclusion}
 
