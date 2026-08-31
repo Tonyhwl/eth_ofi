@@ -94,7 +94,7 @@ Figure~\ref{fig:impact} shows the out-of-sample relation. The in-sample and out-
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.88\textwidth]{fig5_impact.png}
-\caption{Out-of-sample bar mid-quote change against contemporaneous OFI, 25 quantile bins with $\pm1$ standard error and the least-squares fit of $\Delta p_t$ on $O_t$ alone. The relationship is monotonic, with impact per unit of flow attenuating in the tails: both extreme bins lie below the fitted line in absolute value. Full estimates are in Table~\ref{tab:impact}.}
+\caption{Out-of-sample bar mid-quote change against contemporaneous OFI, 25 quantile bins with $\pm1$ standard error, the least-squares fit of $\Delta p_t$ on $O_t$ alone, and the power fit with the exponent $\gamma = 0.58$ of Section~\ref{sec:shape}. The relationship is monotonic, with impact per unit of flow attenuating in the tails: both extreme bins lie below the straight fitted line in absolute value, and the power fit tracks them. Full estimates are in Table~\ref{tab:impact}.}
 \label{fig:impact}
 \end{figure}
 
@@ -105,7 +105,7 @@ This regression is contemporaneous: it measures how the mid quote moves together
 
 The ten-bars-per-day calibration is a convention rather than a fitted parameter, and the explanatory power does not depend on it. Rebuilding the panel at eighteen targets from one to one thousand bars per day, with the threshold recomputed on the in-sample window at each scale, leaves the out-of-sample $R^2$ between $0.29$ and $0.32$ everywhere, while $\hat\beta_0$ rises from $+0.17$ on the coarsest bars to $+0.25$ on the finest (Figure~\ref{fig:barscale}). Median durations run from almost four hours down to the panel's one-minute resolution, which binds beyond roughly two hundred bars per day: past that point most bars complete within a single minute, so the finest scales are effectively one-minute time bars.
 
-Because the one-minute floor is a property of the panel, not the data, the sweep is repeated on a ten-second event grid rebuilt from the raw TBBO stream for the out-of-sample window; the rebuilt buckets aggregate back to the minute panel exactly. Dollar-volume bars on this grid, from ten to five thousand bars per day, hold the out-of-sample $R^2$ between $0.31$ and $0.32$ (Figure~\ref{fig:barscale}), and on plain ten-second intervals, the sampling grid of Cont et al.\ (2014), the regression gives $\hat\beta_0 = +0.26$ ($t = 189$, $R^2 = 0.32$) on the 1.6 million ten-second intervals that contain at least one trade. The gap to the equity two-thirds is therefore not an artifact of bar size, though it is partly one of estimation design: their two-thirds is a mean over half-hour subsample regressions, while the $0.32$ pools the full out-of-sample window under one coefficient. Estimated their way, the mean $R^2$ over half-hour windows on the ten-second grid is $0.54$ (windows with at least thirty such intervals), with the caveat that TBBO observes the book only at trade instants. Beyond about five bars per day the lagged coefficient shrinks steadily as bars get finer, and on plain ten-second intervals it is indistinguishable from zero ($t = -0.3$). The small negative $\hat\beta_1$ of Table~\ref{tab:impact} thus reflects netting within coarse bars rather than a persistent reversal in the flow.
+Because the one-minute floor is a property of the panel, not the data, the sweep is repeated on a ten-second event grid rebuilt from the raw TBBO stream for the out-of-sample window; the rebuilt buckets aggregate back to the minute panel exactly. Dollar-volume bars on this grid, from ten to five thousand bars per day, hold the out-of-sample $R^2$ between $0.31$ and $0.32$ (Figure~\ref{fig:barscale}), and on plain ten-second intervals, the sampling grid of Cont et al.\ (2014), the regression gives $\hat\beta_0 = +0.26$ ($t = 189$, $R^2 = 0.32$) on the 1.6 million ten-second intervals that contain at least one trade. The gap to the equity two-thirds is therefore not an artifact of bar size, though it is partly one of estimation design: their two-thirds is a mean over half-hour subsample regressions, while the $0.32$ pools the full out-of-sample window under one coefficient. Estimated their way, the mean $R^2$ over half-hour windows on the ten-second grid is $0.54$ (windows with at least thirty such intervals), with the caveat that TBBO observes the book only at trade instants. That mean is not carried by a few episodes: the interquartile range across windows is $0.48$ to $0.62$, and the yearly means are $0.53$ to $0.55$. Beyond about five bars per day the lagged coefficient shrinks steadily as bars get finer, and on plain ten-second intervals it is indistinguishable from zero ($t = -0.3$). The small negative $\hat\beta_1$ of Table~\ref{tab:impact} thus reflects netting within coarse bars rather than a persistent reversal in the flow.
 
 \begin{figure}[H]
 \centering
@@ -113,6 +113,13 @@ Because the one-minute floor is a property of the panel, not the data, the sweep
 \caption{Out-of-sample $R^2$ (left) and contemporaneous slope $\hat\beta_0$ (right) as the bar threshold is varied, recalibrated on the in-sample window at each scale: one to one thousand target bars per day on the one-minute panel, and ten to five thousand on the ten-second rebuild. The circled point is the ten-bars-per-day calibration used throughout the paper; in the shaded bands each grid's resolution binds: past 200 bars per day most minute-panel bars complete within a single minute, and past 2000 on the ten-second rebuild about half the bars collapse to single buckets.}
 \label{fig:barscale}
 \end{figure}
+
+\section{Shape and state dependence}
+\label{sec:shape}
+
+The tail attenuation in Figure~\ref{fig:impact} can be given a number. Replacing the linear term with a power law, $\Delta p_t = \alpha + b\,\mathrm{sign}(O_t)\,|O_t|^{\gamma} + \varepsilon_t$, and profiling $\gamma$ by least squares gives $\hat\gamma = 0.58$ (day-block bootstrap 95\% confidence interval $0.54$ to $0.60$), and raises the univariate out-of-sample $R^2$ from $0.29$ to $0.32$. Impact in this market is concave in flow, with an exponent close to the $3/5$ that Almgren et al.\ (2005) estimate for equity metaorder impact and well below one; the linear $\hat\beta_0$ of Table~\ref{tab:impact} is the local slope of this curve at typical flows. The relation is symmetric in sign: separate slopes on positive and negative OFI come out at $+0.215$ and $+0.214$, and their difference carries $t = 0.06$.
+
+Impact also moves with the state of the book. Splitting the out-of-sample bars into terciles by the quoted spread at the bar boundary and estimating the regression in basis-point returns, $\hat\beta_0$ rises monotonically from $0.58$ bp per contract in the narrow-spread tercile (median $2.2$ bp) through $0.76$ in the middle to $1.03$ in the wide (median $5.9$ bp); a continuous interaction of OFI with the spread carries $t = 17$ and holds within each calendar year separately ($t$ of $8.3$, $8.2$, and $7.0$ in 2024, 2025, and 2026). A wide spread marks a thin book, so this is the inverse-depth scaling of Cont et al.\ (2014), visible at the touch on a feed that does not observe depth behind it.
 
 \section{Conclusion}
 
@@ -124,6 +131,7 @@ TBBO is trade-sampled, so the book is observed only at trade instants, and it ca
 
 \begin{itemize}
     \setlength{\itemsep}{0.2em}
+    \item Almgren, R., Thum, C., Hauptmann, E., and Li, H. (2005). Direct estimation of equity market impact. \textit{Risk}, 18(7), 58--62.
     \item Bieganowski, B. and Ślepaczuk, R. (2026). Explainable patterns in cryptocurrency microstructure. arXiv:2602.00776.
     \item Cont, R., Kukanov, A., and Stoikov, S. (2014). The price impact of order book events. \textit{Journal of Financial Econometrics}, 12(1), 47--88.
     \item Lopez de Prado, M. (2018). \textit{Advances in Financial Machine Learning}. Wiley.

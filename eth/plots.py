@@ -257,6 +257,10 @@ def fig5_impact():
         bin_err.append(float(y[sel].std(ddof=1) / math.sqrt(sel.sum())))
     bin_x, bin_y, bin_err = np.array(bin_x), np.array(bin_y), np.array(bin_err)
     slope, intercept = np.polyfit(x, y, 1)
+    # power fit at the profiled exponent (see impact_shape.py)
+    gamma = 0.58
+    xg = np.sign(x) * np.abs(x) ** gamma
+    b_pow, a_pow = np.polyfit(xg, y, 1)
     xpad = (bin_x.max() - bin_x.min()) * 0.06
     xs = np.linspace(bin_x.min() - xpad, bin_x.max() + xpad, 100)
 
@@ -265,6 +269,9 @@ def fig5_impact():
     ax.axvline(0, color=off, linewidth=0.7)
     ax.plot(xs, slope * xs + intercept, color=acc2, linewidth=1.7, zorder=3,
             label="OLS fit")
+    ax.plot(xs, b_pow * np.sign(xs) * np.abs(xs) ** gamma + a_pow, color=acc3,
+            linewidth=1.6, linestyle=(0, (5, 3)), zorder=3,
+            label=r"power fit, $\gamma = 0.58$")
     ax.errorbar(bin_x, bin_y, yerr=bin_err, fmt="o", color=acc1, markersize=5.5,
                 elinewidth=1.0, capsize=2.5, zorder=4,
                 label="binned mean, 25 quantile bins")
