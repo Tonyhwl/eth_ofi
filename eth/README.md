@@ -1,183 +1,130 @@
-# ETH OFI Momentum Strategy
+# Order Flow Imbalance and Price Impact in CME Ether Futures
 
-CME ETH futures momentum signal built from Cont-Kukanov-Stoikov (2014) level-1
-Order Flow Imbalance, evaluated on dollar-volume bars.
+Level-1 order flow imbalance (Cont, Kukanov and Stoikov, 2014) on CME Ether
+futures, regressed against the bar mid-quote change on dollar-volume bars.
+The paper is [`paper/eth_ofi_signal.pdf`](paper/eth_ofi_signal.pdf).
 
-- IS: Feb 2021 - Dec 2023
-- OOS: Jan 2024 - Apr 2026
-- Capital: $1M, 15% annualised vol target
-- 4,531 round-trip trades over OOS
+- Data: CME TBBO tick data, February 2021 to August 2026, 41,055 bars
+- In sample: 2021-02 to 2023-12 (12,344 bars); out of sample: 2024-01 to 2026-08 (28,711 bars)
+- Bars: one tenth of the median in-sample daily dollar volume, held fixed out of sample
 
-## Strategy
+## Results
 
-The signal is a rolling z-score of cumulative OFI over $K=5$ dollar-volume
-bars with a 200-bar trailing window for the normalisation stats. Enter when
-$|z| \geq 1$ in the direction of the flow. Exit when $z$ crosses 0, after
-$H=3$ bars, on a contract roll, or on a 10-minute clock cap.
+Regression of bar mid-quote change on contemporaneous and one-bar lagged OFI,
+Newey-West HAC errors with five lags.
 
-Locked configuration (joint IS optimum over 1,920 configurations):
-$K=5$, $H=3$, entry $|z| \geq 1$, $\sigma$-lookback 200, event filter off,
-weekend filter off, cap 10 minutes. Sizing is vol-targeted:
-`n = 0.15 * C / (50 * mid * ann_vol)` with a floor of 1.
+| window        | bars   | beta_0  | t     | beta_1  | t      | R2   |
+|---------------|-------:|--------:|------:|--------:|-------:|-----:|
+| full sample   | 41,055 | +0.247  | 70.2  | -0.027  | -14.4  | 0.29 |
+| in sample     | 12,344 | +0.300  | 44.9  | -0.025  | -7.0   | 0.31 |
+| out of sample | 28,711 | +0.215  | 58.1  | -0.026  | -13.3  | 0.30 |
 
-OFI is computed at level-1 (best bid / best offer) only, consistent with the
-TBBO data source. The exact event-signing formula is in Section 2 of the
-paper.
+The regression is contemporaneous. Lagged OFI alone explains none of the next
+bar's move (out-of-sample R2 below 0.001), so this is price impact, not a
+trading signal.
 
-## Headline results
+Robustness to the bar scale:
 
-| metric                       | value             |
-|------------------------------|-------------------|
-| OOS Sharpe                   | $+5.11$           |
-| OOS CAGR                     | $+29.4\%$         |
-| Total OOS return             | $+81.9\%$         |
-| Maximum drawdown             | $-2.8\%$          |
-| Annual volatility            | $6.9\%$           |
-| SPA p-value (1,920 trials)   | $< 0.001$         |
-| DSR, $P(SR>0)$ (1,920 trials)| $0.958$           |
+- Rebuilt at eighteen targets from 1 to 1,000 bars per day, threshold
+  recalibrated in sample each time: out-of-sample R2 stays in 0.29 to 0.32,
+  beta_0 rises from +0.17 to +0.25 toward finer bars.
+- On a ten-second grid rebuilt from raw ticks (10 to 5,000 bars per day):
+  R2 0.31 to 0.32. Plain ten-second intervals, the Cont et al. grid:
+  beta_0 = +0.26, t = 189, R2 = 0.32 on 1.6 million intervals.
+- Estimated the way Cont et al. estimate their two-thirds, as a mean over
+  half-hour subsample regressions: R2 = 0.54 (interquartile 0.48 to 0.62).
+- The lag coefficient shrinks with finer bars and is zero on ten-second
+  intervals (t = -0.3): netting inside coarse bars, not reversal.
 
-Signal-impact regression on bar mid-quote change: OOS slope on contemporaneous
-OFI is $\beta_0 = +0.249$ (Newey-West HAC $t = 52.8$, $R^2 = 0.32$). Forward
-signed return from signal entry rises rapidly over the first 2 minutes
-($\approx 4$ bp/min), peaks at +21.6 bp at 4 hours, and decays to $-9.4$ bp
-by 24 hours. The 10-minute cap is an IS-optimal vol-control parameter, not
-a signal-decay cutoff.
+Shape and state dependence:
 
-## Robustness and honest caveats
-
-- **The edge depends on the 10-minute cap.** Without it the signal is a ~2.1
-  OOS Sharpe and *fails* the Deflated Sharpe Ratio on the 96-config grid in
-  `robust.py` (DSR = 0.29) — the in-sample pick is not distinguishable from
-  noise-mining. The cap (a searched vol-control parameter) lifts OOS Sharpe to
-  +5.11, and the capped strategy clears DSR over the full 1,920-config search
-  (DSR = 0.958). The cap works by trimming the high-variance tail of the hold,
-  not by lookahead.
-- **Net of fills is the honest headline.** +5.11 is frictionless of impact at
-  one tick/side; reconstructed TBBO fills give +3.77 (aggressive) / +3.49
-  (passive). The strategy holds ~10 minutes and turns over fast, so realistic
-  execution is the number that matters.
-- **The passive fill number is an upper bound.** Legs that do not fill within
-  60s are dropped from the passive PnL, and the misses are adversely selected
-  (they concentrate on legs that ran with the signal).
-
-## Cost sensitivity
-
-| ticks/side | bp/side | OOS Sharpe | CAGR    | MaxDD  |
-|-----------:|--------:|-----------:|--------:|-------:|
-|  0.0       |  0.00   |  $+5.43$   | $+31.0\%$ |  $-2.7\%$ |
-|  0.5       |  0.08   |  $+5.27$   | $+30.2\%$ |  $-2.8\%$ |
-|  **1.0**   |  **0.16**| **$+5.11$**| **$+29.4\%$**| **$-2.8\%$** |
-|  2.0       |  0.31   |  $+4.79$   | $+27.9\%$ |  $-2.9\%$ |
-|  3.0       |  0.47   |  $+4.47$   | $+26.3\%$ |  $-3.0\%$ |
-|  5.0       |  0.78   |  $+3.84$   | $+23.0\%$ |  $-3.2\%$ |
-| 10.0       |  1.56   |  $+2.25$   | $+14.2\%$ |  $-3.6\%$ |
-| 20.0       |  3.12   |  $-0.91$   |  $-6.6\%$ | $-18.6\%$ |
-
-Computed on the locked strategy. 1 ETH tick = $2.50 / contract = ~0.16 bp at
-a typical front-month price. The headline row at 1 tick/side corresponds to
-colocated passive execution; the empirical fill simulation in `fill_sim.py`
-shows aggressive book-walking gives Sharpe $+3.77$ and passive execution at
-the touch gives $+3.49$ on the legs that fill.
+- Impact is concave in flow: power-law exponent 0.58 (bootstrap CI 0.54 to
+  0.60), consistent with the 3/5 of Almgren et al. (2005) for equity
+  metaorders, though the objects differ.
+- Symmetric in sign: slopes +0.215 and +0.214 on positive and negative flow
+  (t = 0.06 for the difference).
+- Steeper when the book is thin: 0.58, 0.76, 1.03 bp per contract across
+  spread terciles (medians 2.2, 3.4, 5.9 bp); interaction t = 17, holding
+  within each year (t 8.3, 8.2, 7.0), with the spread lagged one bar
+  (t = 10.5), with a trailing realised-volatility control (t = 7.1), and
+  within volatility terciles (t 2.8, 4.5, 5.8).
 
 ## Files
 
-| file                  | purpose                                                                   |
-|-----------------------|---------------------------------------------------------------------------|
-| `panel.py`            | Build the per-minute OFI panel from the raw TBBO event stream             |
-| `strategy.py`         | Locked strategy: signal, state machine, PnL conventions                   |
-| `engine.py`           | Streaming one-bar-at-a-time engine (live-ready), mirrors `strategy.py`     |
-| `test_engine_golden.py` | Golden replay: asserts the engine reproduces the locked backtest exactly |
-| `robust.py`           | IS-only dollar-volume bars, then DSR / Hansen SPA / block bootstrap on the 96-config grid |
-| `joint_is.py`         | Full 1,920-config joint IS sweep with SPA and DSR                         |
-| `signal_impact.py`    | OLS of bar mid-quote change on OFI with Newey-West HAC SEs                |
-| `decay.py`            | Sub-bar to 24h signal decay profile from raw TBBO                         |
-| `decay_plot.py`       | Decay-profile figure                                                      |
-| `cost_sensitivity.py` | OOS Sharpe under a flat per-side tick cost                                |
-| `cap_sensitivity.py`  | IS and OOS Sharpe across clock-cap lengths                                |
-| `fill_sim.py`         | Empirical fill simulation: aggressive / passive / staggered               |
-| `walkforward.py`      | Rolling walk-forward re-selection (monthly + quarterly) with figures      |
-| `grid_sensitivity.py` | Walk-forward repeated under shifted and widened parameter grids           |
-| `minute_regression.py`| Signal-impact regression at minute resolution                             |
-| `capacity.py`         | Almgren-Chriss capacity sweep, $1M-$50M                                   |
-| `sizing.py`           | Fixed vs vol-target sizing comparison (no-cap variant)                    |
-| `placebo.py`          | Direction-shuffled placebo over 200 seeds                                 |
-| `plots.py`            | Paper figures: equity, yearly, trades, signal impact, cap sweep           |
-| `archive/tick_fill_sim.py` | Archived worst-case market-order tick-fill reference                |
+| file                  | purpose                                                       |
+|-----------------------|---------------------------------------------------------------|
+| `panel.py`            | per-minute OFI panel from the raw TBBO event stream           |
+| `panel_sub.py`        | ten-second OFI panel, out-of-sample window, same construction |
+| `robust.py`           | `rebuild_vbars_is_only` builds the IS-calibrated bar panel    |
+| `signal_impact.py`    | the price-impact regression, Newey-West HAC                   |
+| `bar_scale.py`        | sweep 1 to 100 bars per day                                   |
+| `bar_scale_ext.py`    | sweep 150 to 1,000 bars per day, one-minute floor diagnostic  |
+| `bar_scale_sub.py`    | sweep on the ten-second grid plus plain ten-second intervals  |
+| `halfhour_r2.py`      | mean R2 over half-hour windows, the Cont et al. statistic     |
+| `impact_shape.py`     | power-law exponent, sign asymmetry, spread terciles           |
+| `spread_vol.py`       | spread effect against the volatility confound                 |
+| `bar_scale_plot.py`   | figure 2 and the quarterly R2 heatmap                         |
+| `plots.py`            | `fig5_impact` draws figure 1                                  |
+| `minute_regression.py`| the regression at minute resolution                           |
+| `decay.py`, `decay_plot.py`, `decay_robustness.py` | forward impact profile after signal events, not in the paper |
+| `../shared/ofi.py`    | event OFI and front-month selection                           |
+| `../shared/bars.py`   | dollar-volume bar construction                                |
+
+Every number in the paper is written by one of these scripts to `results/`.
+
+## Retired strategy code
+
+An earlier version of this repository presented a momentum strategy on the
+same signal. Its execution simulation priced entries before the bar that
+generated them was complete, so its performance figures were not valid. The
+strategy was retired and the paper rewritten around the impact measurement.
+The code stays for the record: `strategy.py`, `engine.py`, `fill_sim.py`,
+`walkforward.py`, `grid_sensitivity.py`, `joint_is.py`, `cost_sensitivity.py`,
+`cap_sensitivity.py`, `capacity.py`, `sizing.py`, `placebo.py`,
+`test_engine_golden.py`, `test_fill_timing.py`, `archive/tick_fill_sim.py`.
+Nothing in the paper depends on them.
 
 ## Run
 
 ```bash
 pip install numpy pandas scipy matplotlib databento
 
-# Build the panel from raw TBBO (Databento subscription required):
-python panel.py             # raw TBBO -> per-minute panel
-python robust.py            # per-minute panel -> IS-fixed bars, then DSR / SPA / bootstrap
-
-# Core analyses:
-python strategy.py          # locked strategy
-python test_engine_golden.py # verify the streaming engine reproduces the backtest exactly
-python signal_impact.py     # signal-impact regression
-python decay.py             # sub-bar to 24h signal decay
-python joint_is.py          # 1,920-config joint IS sweep + SPA + DSR
-python cost_sensitivity.py  # flat per-side cost sweep
-python cap_sensitivity.py   # clock-cap length sweep
-python fill_sim.py          # empirical fill sim (aggressive/passive/staggered)
-python walkforward.py       # rolling walk-forward re-selection + figures
-python grid_sensitivity.py  # walk-forward under shifted/widened grids
-python minute_regression.py # minute-resolution signal-impact regression
-python capacity.py          # capacity at scale
-python sizing.py            # fixed vs vol-target sizing (no-cap variant)
-python placebo.py           # direction-shuffled placebo
-
-# Figures:
-python plots.py             # equity, yearly, trades, impact, cap-sweep figures
-python decay_plot.py        # decay-profile figure
+python panel.py            # raw TBBO -> per-minute panel
+python robust.py           # per-minute panel -> IS-calibrated bars
+python signal_impact.py    # table 1
+python bar_scale.py        # 1 to 100 bars per day
+python bar_scale_ext.py    # 150 to 1,000 bars per day
+python panel_sub.py        # raw TBBO -> ten-second panel, out of sample
+python bar_scale_sub.py    # ten-second grid sweep and plain intervals
+python halfhour_r2.py      # Cont et al. design-matched R2
+python impact_shape.py     # concavity, symmetry, spread terciles
+python spread_vol.py       # volatility confound
+python bar_scale_plot.py   # figure 2
+python -c "import plots; plots.fig5_impact()"   # figure 1
 ```
 
 ## Data
 
-No market data is bundled. The raw TBBO feed is licensed from Databento and
+No market data is bundled. The TBBO feed is licensed from Databento and
 cannot be redistributed, so `data/` and the derived `.parquet` panels are
-gitignored. `panel.py` expects the raw Databento DBN files in a
-`data/eth_tbbo/` directory at the repository root (sibling to `eth/`), named
-`glbx-mdp3-YYYYMMDD.tbbo.dbn.zst`. With a Databento subscription you can pull
-the same CME ETH TBBO history and rebuild the panel from scratch. `robust.py`
-writes the dollar-volume bar panel to `results/` on first run, and the
-downstream scripts read from there.
+gitignored. `panel.py` expects the raw DBN files in `data/eth_tbbo/` at the
+repository root, named `glbx-mdp3-YYYYMMDD.tbbo.dbn.zst`.
 
 ## Figures
 
-OOS equity curve, $1M starting capital:
-
-![equity](figs/fig1_equity.png)
-
-Per-year breakdown:
-
-![yearly](figs/fig2_yearly.png)
-
-Trade-level PnL distribution:
-
-![trades](figs/fig3_trades.png)
-
-Signal decay profile, sub-bar to 24 hours:
-
-![decay](figs/fig4_decay.png)
-
-Bar mid-quote change against contemporaneous OFI:
+Bar mid-quote change against contemporaneous OFI, out of sample:
 
 ![impact](figs/fig5_impact.png)
 
-Sharpe against clock-cap length:
+Out-of-sample R2 and slope across bar scales:
 
-![cap](figs/fig6_cap.png)
-
-Walk-forward OOS equity, re-optimised quarterly against the locked configuration:
-
-![walkforward](figs/fig_walkforward.png)
+![barscale](figs/fig6_barscale.png)
 
 ## References
 
-- Cont, R., Kukanov, A., Stoikov, S. (2014). The price impact of order book events.
-- Bailey, D., Lopez de Prado, M. (2014). The deflated Sharpe ratio.
-- Hansen, P. (2005). A test for superior predictive ability.
-- Almgren, R., Chriss, N. (2000). Optimal execution of portfolio transactions.
+- Cont, R., Kukanov, A. and Stoikov, S. (2014). The price impact of order book events. Journal of Financial Econometrics, 12(1), 47-88.
+- Silantyev, E. (2019). Order flow analysis of cryptocurrency markets. Digital Finance, 1(1), 191-218.
+- Bieganowski, B. and Slepaczuk, R. (2026). Explainable patterns in cryptocurrency microstructure. arXiv:2602.00776.
+- Almgren, R., Thum, C., Hauptmann, E. and Li, H. (2005). Direct estimation of equity market impact. Risk, 18(7), 58-62.
+- Lopez de Prado, M. (2018). Advances in Financial Machine Learning. Wiley.
+- Newey, W. K. and West, K. D. (1987). A simple, positive semi-definite, heteroskedasticity and autocorrelation consistent covariance matrix. Econometrica, 55(3), 703-708.

@@ -15,6 +15,12 @@ xrp/
 xasset/
 book/
 
+# latex build files
+*.log
+*.aux
+*.out
+*.synctex.gz
+
 # os and editor cruft
 .DS_Store
 Thumbs.db

@@ -1,9 +1,9 @@
-# OFI Momentum Strategy on CME ETH Futures
+# Order Flow Imbalance and Price Impact in CME Ether Futures
 
-A momentum strategy on CME ETH futures driven by Cont-Kukanov-Stoikov (2014)
-level-1 Order Flow Imbalance, evaluated on dollar-volume bars.
+Contemporaneous price impact of Cont, Kukanov and Stoikov (2014) level-1 order
+flow imbalance on CME Ether futures, February 2021 to August 2026, measured on
+dollar-volume bars built from TBBO tick data.
 
-The full writeup, headline results, robustness caveats, run instructions, and
-figures are in [`eth/README.md`](eth/README.md). Strategy and analysis code is
-under [`eth/`](eth/); shared OFI, dollar-bar, and metric helpers are in
-[`shared/`](shared/).
+The paper is [`eth/paper/eth_ofi_signal.pdf`](eth/paper/eth_ofi_signal.pdf).
+Results, file map, and run instructions are in [`eth/README.md`](eth/README.md).
+Shared OFI, bar, and metric helpers are in [`shared/`](shared/).
