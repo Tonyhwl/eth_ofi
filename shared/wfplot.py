@@ -1,5 +1,4 @@
-# walk-forward figures. fig1-style OOS equity + drawdown (walk-forward re-optimised
-# vs the locked config), and a per-fold in-sample vs out-of-sample sharpe scatter.
+# walk-forward figures: OOS equity + drawdown, per-fold IS vs OOS sharpe scatter
 
 import math
 
@@ -43,7 +42,7 @@ def _metrics(pnl, capital):
 
 
 def save_equity_figure(label, wf_pnl, locked_pnl, capital, out_path):
-    """Fig1-style OOS equity (+drawdown): walk-forward re-optimised vs the locked config."""
+    """OOS equity and drawdown, walk-forward vs locked config"""
     _apply_style()
     equity_wf     = (capital + wf_pnl.cumsum()) / 1e6
     equity_locked = (capital + locked_pnl.cumsum()) / 1e6
@@ -65,7 +64,7 @@ def save_equity_figure(label, wf_pnl, locked_pnl, capital, out_path):
                      interpolate=True)
     ax1.axhline(capital / 1e6, color=_OFF, linewidth=0.7, linestyle=(0, (4, 3)))
     y_low, y_high = ax1.get_ylim()
-    ax1.set_ylim(y_low, y_high + (y_high - y_low) * 0.12)   # headroom so the stats box clears the curve
+    ax1.set_ylim(y_low, y_high + (y_high - y_low) * 0.12)   # headroom for the stats box
     ax1.set_ylabel("Equity (\\$M)")
     ax1.set_title(f"{label} walk-forward OOS equity", loc="left")
     ax1.text(0.012, 0.97,
@@ -87,7 +86,7 @@ def save_equity_figure(label, wf_pnl, locked_pnl, capital, out_path):
 
 
 def save_folds_figure(label, fold_is, fold_oos, out_path):
-    """Per-fold in-sample vs out-of-sample Sharpe against the y=x line (the overfit check)."""
+    """per-fold IS vs OOS sharpe against y=x"""
     _apply_style()
     is_sharpe = np.array(fold_is, dtype=float)
     oos_sharpe = np.array(fold_oos, dtype=float)

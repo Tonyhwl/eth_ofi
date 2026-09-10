@@ -1,7 +1,5 @@
-# bar-scale robustness for the price-impact regression: rebuild the dollar-volume
-# bars at several target bar counts per day (threshold always calibrated on the
-# in-sample window only) and re-run the identical regression at each scale. the
-# ten-bars-per-day row must reproduce the paper's table exactly.
+# bar-scale robustness: rebuild bars at several bars/day, re-run the regression
+# threshold calibrated IS-only; 10 bars/day must match the paper's table
 
 import sys
 from pathlib import Path
@@ -21,8 +19,7 @@ TARGETS = [1, 1.5, 2, 3, 5, 7, 10, 14, 20, 30, 50, 70, 100]
 
 
 def build_vbars(df, bar_threshold):
-    """Dollar-volume bars from the minute panel, same construction as robust.py
-    but returned in memory so the live panel on disk is never touched."""
+    """dollar-volume bars, same construction as robust.py, in memory"""
     bars = []
     for sym, sub in df.groupby("front_sym", sort=False):
         sub = sub.sort_index()
@@ -43,14 +40,14 @@ def build_vbars(df, bar_threshold):
 
 
 def median_duration_min(vbars):
-    """Median gap between consecutive OOS bar closes, roll boundaries excluded."""
+    """median OOS bar duration, rolls excluded"""
     oos = vbars[vbars.index >= oos_start]
     gaps = oos.index.to_series().diff()[~oos["roll"]]
     return gaps.median().total_seconds() / 60
 
 
 def quarterly_r2(vbars, target):
-    """Plain OLS R-squared of the two-regressor fit, per OOS calendar quarter."""
+    """plain OLS r2 per OOS quarter"""
     d = vbars[vbars.index >= oos_start].copy()
     d["ofi_lag1"] = d["ofi"].shift(1)
     d = d.dropna(subset=["ofi", "d_mid", "ofi_lag1"])

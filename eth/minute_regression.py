@@ -13,7 +13,7 @@ hac_lags = 30          # minutes; wider than the bar regression's 5 given minute
 
 
 def newey_west_se(X, resid, lags):
-    """Vectorised Newey-West HAC standard errors (same estimator as signal_impact.py)."""
+    """vectorised NW HAC SEs, same estimator as signal_impact.py"""
     n = len(resid)
     XX_inv = np.linalg.inv(X.T @ X)
     moment = X * resid[:, None]                       # row t is residual_t * x_t
@@ -51,8 +51,7 @@ def main():
     if df.index.tz is None:
         df.index = df.index.tz_localize("US/Eastern")
 
-    # one-minute mid change and lag-1 ofi, both dropped across contract rolls and
-    # non-consecutive minutes so the lag is always the true previous minute
+    # d_mid and lag-1 OFI dropped across rolls and non-consecutive minutes
     roll = df["front_sym"] != df["front_sym"].shift(1)
     gap_min = df.index.to_series().diff().dt.total_seconds() / 60.0
     boundary = roll | (gap_min > 1.5)

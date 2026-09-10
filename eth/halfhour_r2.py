@@ -1,8 +1,5 @@
-# design-matched comparison to cont-kukanov-stoikov (2014): their two-thirds
-# figure is a MEAN r-squared over half-hour subsample regressions at ten-second
-# intervals, not a pooled fit. this computes the same statistic on the ten-second
-# panel: per half-hour window, OLS of d_mid on contemporaneous ofi, equal-weighted
-# mean r-squared over windows with enough trade-active intervals.
+# CKS-matched statistic: per half-hour OLS of d_mid on ofi at 10s intervals
+# mean r2 over windows, not a pooled fit
 
 from pathlib import Path
 

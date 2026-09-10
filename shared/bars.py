@@ -5,13 +5,13 @@ import pandas as pd
 
 
 def build_volume_bars(panel, target, is_start, is_end):
-    """Aggregate a minute panel into dollar-volume bars at about target per day."""
+    """dollar-volume bars, about target per day"""
 
     df = panel.copy()
     df["roll"] = (df["front_sym"] != df["front_sym"].shift(1)).fillna(True)
     df["dollar_volume"] = (df["buy_dollar"] + df["sell_dollar"]).fillna(0)
 
-    # calibrate the bar size on in-sample days only, so out-of-sample volume cannot leak in
+    # threshold from IS median daily dv, frozen
     daily_dollar_volume = df["dollar_volume"].resample("1D").sum()
     is_days = daily_dollar_volume[(daily_dollar_volume.index >= is_start)
                                   & (daily_dollar_volume.index <= is_end)
@@ -39,7 +39,7 @@ def build_volume_bars(panel, target, is_start, is_end):
     volume_bars = pd.concat(bars).reset_index(drop=True)
     volume_bars = volume_bars.set_index("timestamp").sort_index()
 
-    # a roll bar joins two contracts, so its price change is not a real return
+    # nan out returns across contract rolls
     volume_bars["roll"] = (volume_bars["front_sym"] != volume_bars["front_sym"].shift(1)).fillna(True)
     volume_bars["mid_difference"] = volume_bars["mid_close"].diff()
     volume_bars.loc[volume_bars["roll"], "mid_difference"] = np.nan

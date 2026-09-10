@@ -1,7 +1,5 @@
-# golden replay: the streaming OFIEngine must reproduce strategy.simulate exactly,
-# and the locked configuration must reproduce its published numbers on the pinned
-# pre-append window. this binds the live engine to the backtest and guards history
-# against silent drift when new data is appended.
+# golden replay: OFIEngine must match strategy.simulate on the pinned window
+# guards history against drift when data is appended
 
 import math
 
@@ -15,9 +13,7 @@ from engine import simulate_streaming
 
 CAP = 10 / 60   # locked 10-minute clock cap
 
-# last complete bar of the pre-append panel. slicing here keeps this test stable
-# after new data is appended: the final bar of any panel is a partial dollar bar
-# that legitimately grows, so it is excluded rather than allowed to fail the gate.
+# last complete pre-append bar, final partial dollar bar excluded
 GOLDEN_ASOF = pd.Timestamp("2026-04-27 19:43:00", tz="US/Eastern")
 
 # frozen expectations on that window (sizing uses strategy.bars_per_year_sizing)

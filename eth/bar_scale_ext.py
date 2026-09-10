@@ -1,7 +1,5 @@
-# extend the bar-scale sweep past 100 bars/day, toward the one-minute floor of
-# the panel. bars are built from one-minute buckets, so once the threshold
-# drops below a typical minute's dollar volume the bars degenerate into plain
-# minute bars; one_min_share tracks how far that degeneration has gone.
+# extend the bar-scale sweep past 100 bars/day, toward the panel's one-minute floor
+# one_min_share tracks degeneration into plain minute bars
 
 import sys
 from pathlib import Path
@@ -22,7 +20,7 @@ TARGETS = [150, 200, 300, 500, 1000]
 
 
 def one_min_share(vbars):
-    """Share of OOS bars that lasted a single minute, roll boundaries excluded."""
+    """share of one-minute OOS bars, rolls excluded"""
     oos = vbars[vbars.index >= oos_start]
     gaps = oos.index.to_series().diff()[~oos["roll"]]
     return float((gaps <= pd.Timedelta(minutes=1)).mean())

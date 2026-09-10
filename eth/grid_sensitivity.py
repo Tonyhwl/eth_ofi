@@ -1,5 +1,4 @@
-# grid-design sensitivity: re-run the quarterly walk-forward under perturbed
-# parameter grids to test whether the result depends on the grid values searched.
+# grid-design sensitivity: quarterly walk-forward under perturbed grids
 
 import os
 import time
@@ -11,8 +10,7 @@ import pandas as pd
 from strategy import panel_path, oos_start, vol_target_contracts
 from walkforward import build_combo_pnl, evaluate, LOCKED
 
-# baseline = the walkforward.py grid; shifted avoids the locked values entirely;
-# widened spans a much larger range around them
+# baseline = walkforward grid; shifted avoids locked values; widened spans wider
 GRID_VARIANTS = {
     "baseline": {"sb": [3, 5, 10], "z": [1.0, 1.5, 2.0],    "hold": [1, 3, 5], "cap_min": [5, 10, 15]},
     "shifted":  {"sb": [4, 6, 8],  "z": [0.75, 1.25, 1.75], "hold": [2, 4, 6], "cap_min": [7.5, 12.5, 20]},

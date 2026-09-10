@@ -1,4 +1,4 @@
-# front-contract selection and order-flow imbalance from a tbbo event stream.
+# front-contract selection and OFI from a TBBO event stream.
 
 import numpy as np
 import pandas as pd
@@ -7,13 +7,13 @@ month_codes = "FGHJKMNQUVXZ"
 
 
 def parse_outright(sym):
-    """Parse a contract symbol such as 'BTCK6' into ('BTC', 2026, 5)."""
+    """'BTCK6' -> ('BTC', 2026, 5)"""
 
-    # spread symbols such as 'BTCK6 - BTCM6' are not outright contracts
+    # skip spread symbols
     if "-" in sym:
         return None
 
-    # walk back over the trailing year digits to separate root, month, year
+    # walk back over trailing year digits
     i = len(sym)
     while i > 0 and sym[i - 1].isdigit():
         i -= 1
@@ -23,7 +23,7 @@ def parse_outright(sym):
 
     month = month_codes.index(month_letter) + 1
 
-    # single-digit years are decade-ambiguous, so resolve them for the 2017 to 2026 range
+    # decade split for the 2017-2026 range
     if int(year_digits) <= 6:
         year = 2020 + int(year_digits)
     else:
@@ -33,7 +33,7 @@ def parse_outright(sym):
 
 
 def expiry_date(year, month):
-    """Last weekday of the given contract month."""
+    """last weekday of the contract month"""
 
     end = pd.Timestamp(year=year, month=month, day=1) + pd.offsets.MonthEnd(0)
     while end.weekday() >= 5:
@@ -42,7 +42,7 @@ def expiry_date(year, month):
 
 
 def find_front(symbols, date):
-    """Return the nearest unexpired contract and its days to expiry."""
+    """nearest unexpired contract and days to expiry"""
 
     best = None
     best_dte = 1e9
@@ -59,12 +59,12 @@ def find_front(symbols, date):
 
 
 def compute_event_ofi(bid_price, ask_price, bid_size, ask_size):
-    """Order-flow imbalance contribution for each consecutive event."""
+    """per-event OFI contribution"""
 
     n = len(bid_price)
     e = np.zeros(n)
     for i in range(1, n):
-        # bid side: a higher bid adds size, a lower bid removes the previous size
+        # bid up adds size, bid down removes prior size
         if bid_price[i] > bid_price[i - 1]:
             bid_points = bid_size[i]
         elif bid_price[i] < bid_price[i - 1]:
@@ -72,7 +72,7 @@ def compute_event_ofi(bid_price, ask_price, bid_size, ask_size):
         else:
             bid_points = bid_size[i] - bid_size[i - 1]
 
-        # ask side is symmetric with the opposite sign
+        # ask side symmetric, opposite sign
         if ask_price[i] < ask_price[i - 1]:
             ask_points = -ask_size[i]
         elif ask_price[i] > ask_price[i - 1]:

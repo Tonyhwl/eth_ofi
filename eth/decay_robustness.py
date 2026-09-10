@@ -1,7 +1,5 @@
-# robustness of the decay profile to the event-definition parameters: repeat
-# the first-crossing measurement for alternative K and |z| thresholds, with
-# forward mids taken from the minute panel (minute resolution is sufficient
-# for a relative comparison across configurations).
+# decay-profile robustness across alternative K and |z| thresholds.
+# forward mids from the minute panel.
 
 import sys
 from pathlib import Path

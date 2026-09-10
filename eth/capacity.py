@@ -1,4 +1,4 @@
-# capacity sweep using the almgren-chriss (2000) square-root impact model.
+# capacity sweep with almgren-chriss (2000) square-root impact
 
 import math
 import sys
@@ -26,8 +26,6 @@ capitals = [1_000_000, 2_000_000, 5_000_000, 10_000_000, 20_000_000, 50_000_000]
 
 
 def load_panel():
-    """Reads dollar-bar panel + loads data."""
-
     df = pd.read_parquet(panel_path).sort_index()
     df["roll"] = (df["front_sym"] != df["front_sym"].shift(1)).fillna(True) # first bar of each new contract
     years = (df.index.max() - df.index.min()).total_seconds() / (365.25 * 86400)
@@ -37,7 +35,7 @@ def load_panel():
 
 
 def vol_target_contracts(df, cap):
-    """Size positions on the frozen in-sample bar density."""
+    """vol-target sizing on frozen IS bar density"""
 
     ret         = df["mid_close"].pct_change().mask(df["roll"]).fillna(0)
     rolling_std = ret.rolling(vol_lookback, min_periods=vol_lookback).std().shift(1)
@@ -49,7 +47,7 @@ def vol_target_contracts(df, cap):
 
 
 def bar_vol_series(df):
-    """Produces trailing per-bar volatility series."""
+    """trailing per-bar vol"""
 
     ret = df["mid_close"].pct_change().mask(df["roll"]).fillna(0)
 
@@ -57,7 +55,7 @@ def bar_vol_series(df):
 
 
 def pnl_with_impact(trades, df, sigma_bar, bars_per_year, adv_daily):
-    """Produces impact-adjusted pnl series."""
+    """impact-adjusted pnl"""
 
     bars_per_day = bars_per_year / 252
     v_per_bar    = adv_daily / bars_per_day
@@ -88,7 +86,7 @@ def pnl_with_impact(trades, df, sigma_bar, bars_per_year, adv_daily):
 
 
 def run_metrics(pnl_oos, cap):
-    """Metrics: Sharpe, CAGR, and MaxDD."""
+    """sharpe, cagr, max dd"""
 
     ret = (pnl_oos / cap).dropna()
     cal_years = (ret.index.max() - ret.index.min()).total_seconds() / (365.25 * 86400)

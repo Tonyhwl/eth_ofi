@@ -1,8 +1,5 @@
-# is the spread effect on impact a depth story or volatility in disguise?
-# wide spreads and large moves are both symptoms of volatile periods, so the
-# OFI x spread interaction is re-estimated with a predetermined realized-vol
-# interaction alongside, with the spread lagged one bar, and within volatility
-# terciles. all in basis-point returns, NW-5 errors.
+# spread x OFI interaction against the volatility confound
+# vol control, lagged spread, vol terciles; bp returns, NW-5 errors
 
 import sys
 from pathlib import Path
@@ -19,7 +16,7 @@ VOL_BARS = 20
 
 
 def interaction(df, cols, label):
-    """d_mid_bp on [1, ofi, interactions..., ofi_lag1]; returns coef/t per interaction."""
+    """d_mid_bp on [1, ofi, interactions, ofi_lag1], coef and t per interaction"""
     y = df["d_mid_bp"].values
     X = np.column_stack([np.ones(len(y)), df["ofi"].values]
                         + [df["ofi"].values * df[c].values for c in cols]
@@ -44,7 +41,7 @@ def main():
     df = df.join(sp.rename("spread_bp"), how="inner")
     df = df[np.isfinite(df["spread_bp"]) & (df["spread_bp"] > 0)]
 
-    # predetermined state: previous bar's closing spread, trailing realized vol
+    # predetermined state: prior bar's closing spread, trailing realised vol
     df["s_lag"] = df["spread_bp"].shift(1)
     df["vol"] = df["d_mid_bp"].rolling(VOL_BARS).std().shift(1)
     df = df.dropna(subset=["s_lag", "vol"])

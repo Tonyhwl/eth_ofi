@@ -1,6 +1,5 @@
-# stateful, one-bar-at-a-time OFI engine: the same decision logic as
-# strategy.simulate, driven a bar at a time so it can run live. proven equivalent
-# to strategy.simulate by test_engine_golden.py (must reproduce the locked trades).
+# one-bar-at-a-time OFI engine, mirrors strategy.simulate
+# equivalence pinned by test_engine_golden.py
 
 from collections import deque
 
@@ -14,7 +13,7 @@ from strategy import (
 
 
 class OFIEngine:
-    """Run the locked strategy incrementally. Feed one bar with step(); read trades."""
+    """incremental runner for the locked strategy"""
 
     def __init__(self, use_event_filter=False, use_weekend_filter=False,
                  cap_hours=None, events=None,
@@ -41,13 +40,13 @@ class OFIEngine:
         self._i = -1
 
     def _zscore(self, ofi):
-        """Rolling z of cumulative OFI, matching strategy.simulate's shifted window."""
+        """rolling z of cumulative OFI, shifted window"""
         self.ofi_buffer.append(ofi)
         if len(self.ofi_buffer) == self.signal_bars:
             cofi = float(np.sum(self.ofi_buffer))
         else:
             cofi = np.nan
-        # mean/std use the zscore_lookback values BEFORE this bar (shift by one)
+        # window excludes current bar (shift by one)
         if len(self.cofi_hist) == self.zscore_lookback:
             window = np.fromiter(self.cofi_hist, dtype=float, count=self.zscore_lookback)
             if np.all(np.isfinite(window)) and np.isfinite(cofi):
@@ -73,7 +72,7 @@ class OFIEngine:
         self.pos.reset()
 
     def step(self, ts, ofi, contract_sym, n_contracts):
-        """Process one bar. Returns the list of actions taken (for a live runner)."""
+        """one bar, returns actions"""
         self._i += 1
         i = self._i
         z = self._zscore(ofi)
@@ -126,14 +125,14 @@ class OFIEngine:
         return actions
 
     def finalize(self, ts, i):
-        """Flush an open position at end of data (matches strategy.simulate's 'end')."""
+        """end-of-data flush, exit reason 'end'"""
         if self.pos.is_open():
             self._close(ts, i, "end")
 
 
 def simulate_streaming(df, n_contracts_series, use_event_filter, use_weekend_filter,
                        cap_hours=None, events=None):
-    """Drive OFIEngine over a panel; same signature/output as strategy.simulate."""
+    """OFIEngine over a panel, same output as strategy.simulate"""
     eng = OFIEngine(use_event_filter, use_weekend_filter, cap_hours, events)
     contracts = n_contracts_series.fillna(0).values
     syms = df["front_sym"].values

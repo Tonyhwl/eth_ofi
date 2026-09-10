@@ -1,5 +1,4 @@
-# direction-shuffled placebo: hold the locked trades fixed and permute the
-# long/short labels over 200 seeds, to test the edge is in the direction call.
+# direction-shuffled placebo: locked trades fixed, long/short labels permuted over 200 seeds
 
 import sys
 from dataclasses import replace

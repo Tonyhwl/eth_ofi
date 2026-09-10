@@ -1,4 +1,4 @@
-# clock-cap sensitivity sweep for the locked eth ofi strategy (not in dsr).
+# clock-cap sensitivity sweep for the locked eth OFI strategy (not in dsr)
 
 import sys
 import math
@@ -20,14 +20,12 @@ cap_grid_min = [1, 2, 3, 5, 7, 10, 15, 20, 30, 45, 60, 90, 120, 180,
 
 
 def bars_per_year(index):
-    """Bars per year for a datetime index."""
     years = (index.max() - index.min()).total_seconds() / (365.25 * 86400)
 
     return len(index) / years
 
 
 def annualised_sharpe(pnl, bars_per_year_value):
-    """Annualised Sharpe of a per-bar pnl array."""
     returns = pnl[np.isfinite(pnl)]
 
     return float(returns.mean() / returns.std(ddof=1) * math.sqrt(bars_per_year_value))

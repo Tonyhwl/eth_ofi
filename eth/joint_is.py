@@ -1,6 +1,5 @@
-# joint IS sweep over signal_bars x entry_z x max_hold x zlb x filters x cap.
-# picks the best IS Sharpe and runs SPA and DSR over the full 1920 trial set.
-# precomputes event and friday masks and reuses z-series.
+# joint IS sweep: signal_bars x entry_z x max_hold x zlb x filters x cap
+# spa and dsr over the full 1920-trial set
 
 import json
 import sys
@@ -40,7 +39,7 @@ CAP_NORM = contract_mult * 2500.0
 
 
 def build_event_mask(timestamps, events):
-    """Boolean array: True on bars within [-event_pre_min, +event_post_min] of any event."""
+    """bars inside [-pre, +post] of any event"""
     n_bars = len(timestamps)
     mask = np.zeros(n_bars, dtype=bool)
     if not events:
@@ -75,7 +74,6 @@ def precompute_z(df, signal_bars, zlb):
 
 
 def annualized_sortino(pnl, bpy):
-    """Annualised Sortino (downside-deviation) of a per-bar pnl array."""
     p = pnl[np.isfinite(pnl)]
     if len(p) < 30:
         return np.nan
@@ -86,7 +84,7 @@ def annualized_sortino(pnl, bpy):
 
 
 def calmar_ratio(pnl, bpy, capital):
-    """Calmar (CAGR over absolute max drawdown) of a per-bar dollar pnl array."""
+    """cagr over abs max dd"""
     p = pnl[np.isfinite(pnl)]
     if len(p) < 30:
         return np.nan
@@ -308,7 +306,7 @@ def main():
           f"cap_h = {best['cap_h']:.4f}", flush=True)
     print(f"  IS Sharpe = {best['sr_is']:+.3f}, OOS Sharpe = {best['sr_oos']:+.3f}", flush=True)
 
-    # IS-best by Sortino and by Calmar, to check the objective does not drive the pick
+    # IS-best by sortino and calmar, objective check
     sortino_is_arr = np.asarray(sortino_is_arr)
     calmar_is_arr  = np.asarray(calmar_is_arr)
     alt_best = {}
@@ -330,7 +328,7 @@ def main():
     print(f"  studentized max t = {spa['t_stat_consistent']:.3f}", flush=True)
     print(f"  p_SPA             = {spa['p_spa_consistent']:.5f}", flush=True)
 
-    # rebuild is pnl for the focal config
+    # rebuild IS pnl for the focal config
     row = df_out.iloc[best_index]
     z_focal = z_cache[(int(row.signal_bars), int(row.zlb))]
     trades_focal = fast_simulate(

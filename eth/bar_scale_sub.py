@@ -1,9 +1,5 @@
-# bar-scale sweep on the ten-second bucket panel: dollar-volume bars whose
-# boundaries resolve at ten seconds instead of one minute, pushing the sweep
-# past the minute floor. the in-sample threshold rule carries over from the
-# minute panel because daily dollar volume does not depend on bucket size.
-# also runs the plain ten-second interval regression (the cont-kukanov-stoikov
-# sampling grid), on consecutive trade-active buckets.
+# bar-scale sweep on the ten-second bucket panel, past the minute floor
+# threshold rule from minute-panel IS; plus plain 10s CKS-grid regression
 
 import sys
 from pathlib import Path
@@ -24,8 +20,7 @@ TARGETS = [10, 50, 100, 200, 500, 1000, 2000, 5000]
 
 
 def bucket_stats(vbars):
-    """Median bar duration in seconds and share of single-bucket bars, OOS,
-    roll boundaries excluded."""
+    """median bar duration (s) and single-bucket share, OOS, rolls excluded"""
     gaps = vbars.index.to_series().diff()[~vbars["roll"]]
     return (gaps.median().total_seconds(),
             float((gaps <= pd.Timedelta(seconds=10)).mean()))

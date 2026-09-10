@@ -1,6 +1,5 @@
-# ETH OFI sizing comparison: fixed 1, fixed 4, vol-target on $1M.
-# uses the locked signal parameters but NO clock cap, so these metrics are the
-# bare no-cap variant, not the paper headline.
+# eth OFI sizing comparison: fixed 1, fixed 4, vol-target on $1M
+# locked params, no clock cap, not the paper headline
 
 import math, json
 from pathlib import Path
@@ -20,7 +19,7 @@ capital          = 1_000_000.0
 vol_target       = 0.15
 vol_lookback     = 200
 
-# frozen in-sample bar density for sizing (see strategy.bars_per_year_sizing)
+# frozen IS bar density for sizing (see strategy.bars_per_year_sizing)
 bars_per_year_sizing = 4293.003222294825
 oos_start = pd.Timestamp("2024-01-01", tz="US/Eastern")
 

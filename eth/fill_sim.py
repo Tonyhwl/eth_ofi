@@ -1,5 +1,4 @@
-# empirical fill simulation from raw TBBO under three execution variants:
-# aggressive (walk the book), passive (rest at touch, 60s queue), staggered (5 child orders).
+# empirical fill simulation from raw TBBO: aggressive / passive / staggered
 
 import sys, math, re
 from collections import defaultdict
@@ -74,12 +73,7 @@ def load_tbbo_day(date_obj):
 
 
 def decision_pos(tbbo, ts, on_bar=True):
-    """Index position of the book state a decision at ts could actually act on.
-
-    A bar's mid_close comes from the last event inside its final minute, but that
-    event is only known to be the last one once the next minute begins. So a
-    bar-boundary decision is executable from the first tick at or after ts+60s.
-    """
+    """bar decision executable from first tick at ts+60s"""
     if not on_bar:                      # clock-cap exit: fires mid-bar at ts
         return tbbo.index.searchsorted(ts, side="right") - 1
     pos = tbbo.index.searchsorted(ts + pd.Timedelta(seconds=60), side="left")
@@ -87,14 +81,14 @@ def decision_pos(tbbo, ts, on_bar=True):
 
 
 def leg_time(t, tag, cap_hours):
-    """Timestamp a leg is actually executable: cap exits fire on the clock."""
+    """executable timestamp for a leg, cap exits on the clock"""
     if tag == "exit" and t.exit_reason == "cap" and cap_hours is not None:
         return t.entry_time + pd.Timedelta(hours=cap_hours), False
     return (t.entry_time if tag == "entry" else t.exit_time), True
 
 
 def aggressive_fill(tbbo, ts, direction, side, size, on_bar=True):
-    """Market order that walks the book, using top-of-book size as a depth proxy."""
+    """market order, top-of-book size as depth proxy"""
     pos = decision_pos(tbbo, ts, on_bar)
     if pos < 0:
         return None
@@ -122,7 +116,7 @@ def aggressive_fill(tbbo, ts, direction, side, size, on_bar=True):
 
 
 def passive_fill(tbbo, ts, direction, side, size, on_bar=True, window_secs=PASSIVE_WINDOW_SECS):
-    """Post at the touch and fill only if a trade prints at our price within the window."""
+    """post at touch, fill on a print at the posted price"""
     pos = decision_pos(tbbo, ts, on_bar)
     if pos < 0:
         return None
@@ -150,7 +144,7 @@ def passive_fill(tbbo, ts, direction, side, size, on_bar=True, window_secs=PASSI
 
 def staggered_fill(tbbo, ts, direction, side, size, on_bar=True,
                     n_children=STAGGER_N_CHILDREN, interval_secs=STAGGER_INTERVAL_SECS):
-    """Split into n_children equal-size aggressive fills one minute apart."""
+    """n_children aggressive child fills, one minute apart"""
     child_size = max(1, int(round(size / n_children)))
     if child_size * n_children < size:
         sizes = [child_size] * (n_children - 1) + [size - child_size * (n_children - 1)]
@@ -189,7 +183,7 @@ def main():
     years_oos = (df_oos.index.max() - df_oos.index.min()).total_seconds() / (365.25 * 86400)
     bars_per_year_oos = len(df_oos) / years_oos
 
-    # group OOS trades by date so each day's TBBO loads once
+    # group legs by day, one TBBO load per day
     by_day = defaultdict(list)
     for t in oos_trades:
         by_day[leg_time(t, "entry", CAP)[0].tz_convert("UTC").date()].append(("entry", t))

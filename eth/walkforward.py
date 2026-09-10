@@ -1,5 +1,4 @@
-# walk-forward for the ETH OFI strategy: re-select parameters on a rolling in-sample
-# window, test on the next window, roll forward. the stitched OOS curve exposes overfit.
+# ETH OFI walk-forward: re-select params per rolling window, stitch the OOS curve
 
 import sys
 import os
@@ -20,7 +19,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent / "shared"))
 from metrics import sharpe as ann_sharpe
 
-# parameter grid searched on each train window (zscore lookback fixed at the locked value)
+# grid per train window, zscore lookback fixed at locked value
 SIGNAL_BARS_GRID = [3, 5, 10]
 ENTRY_GRID       = [1.0, 1.5, 2.0]
 MAX_HOLD_GRID    = [1, 3, 5]
@@ -28,10 +27,10 @@ CAP_GRID         = [5 / 60, 10 / 60, 15 / 60]
 ZLB              = 200
 LOCKED           = (5, 1.0, 3, 10 / 60)   # README locked config, for the equity overlay
 
-# test windows tile contiguously (step == test); train window is held fixed
+# test windows tile contiguously (step == test), train window fixed
 WINDOW_SCHEMES = [(1, 1, "monthly"), (3, 3, "quarterly")]
 
-# worker-process globals, set once per worker so the bar panel is not re-pickled per task
+# worker globals, panel pickled once per worker
 _DF = None
 _NC = None
 
@@ -43,7 +42,7 @@ def _init_worker(df, n_contracts):
 
 
 def _run_combo(params):
-    """Full-panel per-bar pnl for one parameter combo (runs in a worker process)."""
+    """per-combo full-panel pnl (worker)"""
     sb, et, mh, cap = params
     strat.signal_bars     = sb
     strat.entry_threshold = et
@@ -55,7 +54,7 @@ def _run_combo(params):
 
 
 def build_combo_pnl(df, n_contracts, combos, workers):
-    """Per-combo full-panel pnl, in parallel across cores (or serially if workers <= 1)."""
+    """per-combo pnl across cores, serial if workers <= 1"""
     if workers <= 1:
         _init_worker(df, n_contracts)
         return {p: _run_combo(p)[1] for p in combos}
@@ -68,7 +67,7 @@ def build_combo_pnl(df, n_contracts, combos, workers):
 
 
 def make_folds(index, train, test, step):
-    """Rolling (train_start, train_end, test_end) windows with full test windows only."""
+    """rolling folds, full test windows only"""
     folds = []
     train_start = index.min()
     last = index.max()
@@ -87,7 +86,7 @@ def window_sharpe(pnl, start, end):
 
 
 def evaluate(combo_pnl, index, oos_start_ts, train, test, step, label):
-    """Run one walk-forward scheme and print a one-line summary."""
+    """one walk-forward scheme"""
     folds = make_folds(index, train, test, step)
     rows = []
     for train_start, train_end, test_end in folds:

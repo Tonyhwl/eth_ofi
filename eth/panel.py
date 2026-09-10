@@ -1,5 +1,5 @@
 # build per-minute ETH front-month OFI panel from a TBBO event stream.
-# cont-kukanov-stoikov (2014) ofi: bid up -> +bid_sz, bid flat -> +delta_sz, bid dn -> -prev_sz.
+# CKS OFI: bid up -> +bid_sz, bid flat -> +delta_sz, bid dn -> -prev_sz
 
 import sys, glob, re, argparse, time, os
 from pathlib import Path

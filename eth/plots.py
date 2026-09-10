@@ -1,4 +1,5 @@
-# ETH OFI paper figures (fig1/2/3/5/6). locked config: K=5, H=3, |z|>=1, zlb=200, filters off, 10-min cap.
+# eth OFI paper figures (fig1/2/3/5/6)
+# locked config: K=5, H=3, |z|>=1, zlb=200, filters off, 10-min cap
 
 import sys
 import math
@@ -74,7 +75,7 @@ def _oos_trades_and_pnl():
     years_oos = (df_oos.index.max() - df_oos.index.min()).total_seconds() / (365.25 * 86400)
     bars_per_year_oos = len(df_oos) / years_oos
 
-    # per-trade pnl for the trade histogram, using the same realistic convention
+    # per-trade pnl for the histogram, same realistic convention
     oos_trades = [t for t in trades if t.entry_time >= oos_start]
     trade_pnl = []
     for t in oos_trades:
@@ -232,7 +233,7 @@ def fig3_trades(trade_pnl):
 
 
 def fig5_impact():
-    """Binned OOS scatter of bar mid-quote change against contemporaneous OFI."""
+    """binned OOS scatter: d_mid vs OFI"""
     sys.path.insert(0, str(root))
     from strategy import panel_path, oos_start
     df = pd.read_parquet(panel_path).sort_index()
@@ -288,7 +289,7 @@ def fig5_impact():
 
 
 def fig6_cap():
-    """In-sample and OOS Sharpe across a fine clock-cap sweep, other parameters locked."""
+    """IS and OOS sharpe across the clock-cap sweep"""
     sweep = pd.read_csv(root / "results" / "cap_sweep.csv").sort_values("cap_min")
     cap_min = sweep["cap_min"].values.astype(float)
     sharpe_is = sweep["sr_is"].values

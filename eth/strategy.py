@@ -1,6 +1,5 @@
-# ETH OFI strategy. signal = rolling z-score of cumulative OFI over 5
-# dollar-volume bars; entry |z| >= 1; exit on z-cross, 3-bar hold, contract
-# roll, or 10-min clock cap. realistic PnL convention on cap-fire bars.
+# ETH OFI strategy: z-score of cumulative OFI over dollar-volume bars
+# entry |z| >= 1, exits on z-cross, hold cap, roll, clock cap
 
 import math
 from dataclasses import dataclass
@@ -18,7 +17,7 @@ panel_path = root / "results" / "eth_ofi_vbars_isfix.parquet"
 signal_bars      = 5
 entry_threshold  = 1.0
 max_hold_bars    = 3
-direction_sign   = +1   # +1 = follow ofi
+direction_sign   = +1   # +1 = follow OFI
 zscore_lookback  = 200
 
 # instrument
@@ -31,9 +30,7 @@ capital      = 1_000_000.0
 vol_target   = 0.15
 vol_lookback = 200
 
-# bar density used to annualise vol for sizing. frozen on the in-sample window
-# only, so appending out-of-sample data cannot retroactively rescale historical
-# position sizes. 12,379 IS bars over 2.883529 years.
+# IS-only bar density, frozen: 12,379 bars / 2.883529 yrs
 bars_per_year_sizing = 4293.003222294825
 
 oos_start = pd.Timestamp("2024-01-01", tz="US/Eastern")
@@ -78,7 +75,7 @@ class Trade:
 
 @dataclass
 class Position:
-    """Mutable open-position state for the simulation loop."""
+    """open-position state"""
     direction:  int = 0     # +1 long, -1 short, 0 flat
     size:       int = 0
     bars_held:  int = 0
@@ -137,7 +134,7 @@ def in_friday_window(ts, mins_before):
 
 
 def vol_target_contracts(df):
-    """Vol-targeted contract sizing on the frozen in-sample bar density."""
+    """vol-target sizing on frozen IS bar density"""
     returns     = df["mid_close"].pct_change().mask(df["roll"]).fillna(0)
     rolling_std = returns.rolling(vol_lookback, min_periods=vol_lookback).std().shift(1)
     ann_vol     = rolling_std * math.sqrt(bars_per_year_sizing)
@@ -148,7 +145,7 @@ def vol_target_contracts(df):
 
 def simulate(df, n_contracts_series, use_event_filter, use_weekend_filter,
              cap_hours=None, events=None):
-    """Run the state machine and return a list of Trade objects."""
+    """bar-by-bar state machine, returns trades"""
     # exit priority: clock cap > event flat > friday flat > roll > hold > z-cross
 
     if use_event_filter and events is None:
@@ -232,7 +229,7 @@ def simulate(df, n_contracts_series, use_event_filter, use_weekend_filter,
 
 
 def pnl_from_trades(trades, df, convention="realistic", cap_hours=None):
-    """Bar-level PnL. convention: 'realistic' | 'optimistic' | 'conservative'."""
+    """bar-level PnL, convention: realistic | optimistic | conservative"""
     n_bars  = len(df)
     d_mid   = df["d_mid"].fillna(0).values
     times   = df.index

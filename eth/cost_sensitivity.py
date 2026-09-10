@@ -1,4 +1,4 @@
-# OOS Sharpe vs per-side adverse-selection cost (locked strategy).
+# OOS sharpe vs per-side adverse-selection cost (locked strategy)
 
 import math
 from pathlib import Path

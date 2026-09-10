@@ -1,8 +1,5 @@
-# forward price-impact decay after OFI signal events. an event is the first
-# upward crossing of |z| >= 1 on the dollar-volume bars (a timestamp and a
-# direction only - no trading state machine is involved). t=0 is anchored at
-# the exact instant the event bar becomes knowable: the trade at which the
-# contract's cumulative dollar volume crosses the bar threshold.
+# forward price-impact decay after first-crossing OFI events on the dollar-volume bars.
+# t=0 anchored at the trade where cumulative dollar volume crosses the bar threshold.
 
 import sys
 import math
@@ -29,7 +26,7 @@ TARGET_BARS_PER_DAY = 10
 
 
 def load_day_for_symbol(utc_date, symbol):
-    """One UTC day of TBBO for one contract: quotes, trades, sizes."""
+    """one UTC day of TBBO for one contract"""
     path = TBBO_DIR / f"glbx-mdp3-{utc_date.strftime('%Y%m%d')}.tbbo.dbn.zst"
     if not path.exists():
         return None
@@ -67,7 +64,7 @@ def load_window(utc_date, symbol, n_days=2):
 
 
 def first_crossing_events(bars):
-    """First upward crossings of |z| >= entry_threshold; timestamp + direction."""
+    """first upward crossings of |z| >= entry_threshold"""
     cum = bars["ofi"].rolling(signal_bars, min_periods=signal_bars).sum()
     mean = cum.rolling(zscore_lookback, min_periods=zscore_lookback).mean().shift(1)
     std = cum.rolling(zscore_lookback, min_periods=zscore_lookback).std(ddof=1).shift(1)
@@ -107,7 +104,7 @@ def main():
     stale_secs = []
     dropped = {"no_data": 0, "no_crossing": 0}
 
-    # group events by (utc day, contract) so each file loads once
+    # group events by (UTC day, contract), one file load each
     by_key = {}
     ev_ts = events.index
     for i in range(n_ev):
@@ -130,8 +127,7 @@ def main():
                 continue
             k = math.floor(cum.loc[label] / thr)
             needed = (k + 1) * thr - float(cum.loc[label])
-            # accumulate trade dollars from the start of the NEXT minute until
-            # the bar threshold is crossed; that trade is the anchor instant
+            # trade dollars accumulate from the next minute; the crossing trade is the anchor
             start = idx.searchsorted(label + pd.Timedelta(seconds=60), side="left")
             stop_ts = last_minute[sym] + pd.Timedelta(seconds=60)
             acc = 0.0

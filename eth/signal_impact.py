@@ -35,7 +35,7 @@ def newey_west_se(X, resid, lags):
 
 
 def run_regression(df, label, lags=5):
-    # lag built before dropping rows, so post-roll bars get the true previous bar's ofi
+    # lag built before dropping rows, post-roll bars keep the true prev OFI
     df = df.copy()
     df["ofi_lag1"] = df["ofi"].shift(1)
     df = df.dropna(subset=["ofi", "d_mid", "ofi_lag1"])
@@ -80,7 +80,7 @@ def main():
 
     rows = []
     rows.append(run_regression(df, "Full sample"))
-    # labels derive from the data so they cannot go stale when the panel grows
+    # labels from the data, can't go stale
     is_df, oos_df = df[df.index < oos_start], df[df.index >= oos_start]
     span = lambda d: f"{d.index.min():%Y-%m} to {d.index.max():%Y-%m}"
     rows.append(run_regression(is_df,  f"In-sample {span(is_df)}"))

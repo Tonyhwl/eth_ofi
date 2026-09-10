@@ -1,9 +1,5 @@
-# build a sub-minute ETH front-month OFI panel from the TBBO event stream.
-# same per-event construction as panel.py, floored to a finer bucket (default
-# ten seconds, the cont-kukanov-stoikov sampling interval). built for the OOS
-# window only: the bar threshold depends on daily dollar volume, which is
-# bucket-invariant, so the in-sample calibration carries over from the minute
-# panel unchanged.
+# sub-minute front-month OFI panel, same construction as panel.py, default 10s buckets
+# OOS only; IS bar threshold is bucket-invariant, carries over from the minute panel.
 
 import sys, glob, re, argparse, time, os
 from pathlib import Path

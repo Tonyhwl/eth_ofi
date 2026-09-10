@@ -1,4 +1,4 @@
-# eth ofi robustness suite: is-only bar calibration, dsr, hansen spa, block bootstrap
+# eth OFI robustness suite: IS-only bar calibration, dsr, hansen spa, block bootstrap
 
 import sys, math, json
 from pathlib import Path
@@ -25,11 +25,11 @@ capital          = 1_000_000.0
 vol_target       = 0.15
 vol_lookback     = 200
 
-# frozen in-sample bar density for sizing (see strategy.bars_per_year_sizing)
+# frozen IS bar density for sizing (see strategy.bars_per_year_sizing)
 bars_per_year_sizing = 4293.003222294825
 
 
-# 1. rebuild dollar-volume bars with is-only threshold
+# rebuild dollar-volume bars with IS-only threshold
 
 def rebuild_vbars_is_only(target_bars_per_day=10):
     df = pd.read_parquet(panel_min).sort_index()
@@ -69,7 +69,7 @@ def rebuild_vbars_is_only(target_bars_per_day=10):
     return vbars
 
 
-# 2a. deflated sharpe ratio (bailey and lopez de prado 2014)
+# deflated sharpe ratio (bailey and lopez de prado 2014)
 
 euler_mascheroni = 0.5772156649
 
@@ -116,7 +116,7 @@ def deflated_sharpe(returns, sr_trials_annual, bars_per_year):
     }
 
 
-# 2b. hansen (2005) spa-consistent test
+# hansen (2005) spa-consistent test
 
 def _stationary_bootstrap_indices(n, mean_block, rng):
     prob = 1.0 / mean_block
@@ -174,7 +174,7 @@ def hansen_spa_consistent(pnl_matrix, n_boot=2000, mean_block=5.0, seed=7):
     }
 
 
-# 3. circular block bootstrap on locked oos pnl
+# circular block bootstrap on locked OOS pnl
 
 def circular_block_bootstrap(pnl, bars_per_year, block_size, n_boot=5000, seed=11):
     returns = np.asarray(pnl, dtype=float)

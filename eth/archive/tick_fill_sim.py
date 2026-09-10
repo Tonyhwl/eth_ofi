@@ -1,5 +1,5 @@
-# market-order tick-fill sim using raw TBBO. worst-case retail execution
-# benchmark; not used for the paper's colocated 1-tick headline.
+# market-order tick-fill sim from raw TBBO
+# worst-case retail benchmark, not the paper headline
 
 import sys
 import math
@@ -21,7 +21,7 @@ TBBO_DIR = ROOT.parent / "data" / "eth_tbbo"
 
 
 def load_tbbo_day(date_obj):
-    """Load one day of TBBO data as a frame of front-month bid/ask/sizes."""
+    """one day of TBBO, front-month bid/ask/sizes"""
     filename = f"glbx-mdp3-{date_obj.strftime('%Y%m%d')}.tbbo.dbn.zst"
     file_path = TBBO_DIR / filename
     if not file_path.exists():
@@ -67,7 +67,7 @@ def load_tbbo_day(date_obj):
 
 
 def bbo_at(tbbo_df, ts):
-    """Last TBBO update at or before ts. Returns dict of bid/ask/sizes or None."""
+    """last TBBO update at or before ts"""
     if tbbo_df is None or len(tbbo_df) == 0:
         return None
     pos = tbbo_df.index.searchsorted(ts, side="right") - 1
@@ -79,8 +79,8 @@ def bbo_at(tbbo_df, ts):
 
 
 def fill_price(bbo, direction, size, side, tick_size):
-    """Market order fill price, at the touch if it fits or one tick deeper if it does not."""
-    # direction is +1 for a long position, -1 for a short; side is 'entry' or 'exit'
+    """touch fill, one tick deeper on a sweep"""
+    # direction +1 long, -1 short; side 'entry' or 'exit'
     is_buy = (direction == +1 and side == "entry") or (direction == -1 and side == "exit")
     if is_buy:
         if size <= bbo["ask_sz"]:
@@ -127,7 +127,7 @@ def main():
 
     realised_half_spreads = []   # in ticks, per side
     swept = []                   # boolean per side
-    fill_records = []            # for reconstructing PnL
+    fill_records = []            # for pnl rebuild
 
     print("scanning TBBO ...")
     for i, (day, day_legs) in enumerate(sorted(trades_by_day.items())):
@@ -176,17 +176,16 @@ def main():
     print(f"    max               = {half_spreads.max():.3f}")
     print(f"  Sweep rate          = {sweeps.mean()*100:.1f}% of fills exceeded top-of-book size")
 
-    # rebuild pnl replacing the 1-tick parametric cost with realised half-spreads
+    # rebuild pnl with realised half-spread costs
     fill_df = pd.DataFrame(fill_records)
     fill_df["realised_cost_per_contract"] = fill_df["half_spread_ticks"] * tick_size
     fill_df["realised_cost_total"] = fill_df["realised_cost_per_contract"] * fill_df["size"] * contract_mult
 
-    # pnl adjustment: paper assumed cost = 1 tick * size * mult per side,
-    # new cost = realised half-spread (in $) * size * mult per side
+    # cost delta vs the paper's 1 tick per side
     paper_cost_per_leg = 1.0 * tick_size * fill_df["size"] * contract_mult
     cost_delta = fill_df["realised_cost_total"] - paper_cost_per_leg  # positive = worse than paper
 
-    # pnl is bar-indexed, so push the cost_delta back onto bar timestamps
+    # push leg cost deltas onto nearest bar timestamps
     pnl_tick = pnl_param.copy()
     for _, row in fill_df.iterrows():
         ts_idx = pnl_tick.index.get_indexer([row["ts"]], method="nearest")[0]

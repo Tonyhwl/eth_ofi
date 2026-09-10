@@ -1,11 +1,5 @@
-# shape and state dependence of the impact relation, on the OOS bar panel.
-# (a) concavity: fit d_mid = a + b sign(O)|O|^gamma, gamma profiled by OLS on a
-#     grid, day-block bootstrap CI. gamma = 1 is the linear model; 0.5 is the
-#     square-root impact law.
-# (b) sign asymmetry: separate slopes for positive and negative OFI, NW errors,
-#     Wald test of equality using the full NW covariance.
-# (c) spread conditioning: beta0 by spread tercile (spread at the bar boundary,
-#     from the minute panel), in basis-point returns so the price level drops out.
+# impact shape and state dependence on the OOS bar panel
+# concavity gamma fit, sign asymmetry, spread-tercile conditioning
 
 import sys
 from pathlib import Path
@@ -49,7 +43,7 @@ def nw_cov(X, resid, lags=5):
 
 
 def profile_gamma(o, y):
-    """OLS SSE profiled over the gamma grid; returns (gamma_hat, r2_at_hat)."""
+    """gamma_hat and r2 by profiled OLS over the grid"""
     best = (None, np.inf, None)
     ss_tot = np.sum((y - y.mean()) ** 2)
     for g in GAMMA_GRID:

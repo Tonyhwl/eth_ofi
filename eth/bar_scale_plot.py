@@ -1,6 +1,4 @@
-# figure for the bar-scale robustness sweep: OOS r-squared and slope against
-# median bar duration, threshold recalibrated in-sample at each scale. also a
-# quarter-by-scale r-squared heatmap as an out-of-paper diagnostic.
+# bar-scale sweep figures: OOS r2 and slope vs scale, plus quarterly r2 heatmap
 
 from pathlib import Path
 

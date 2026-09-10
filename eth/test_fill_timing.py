@@ -1,8 +1,5 @@
-# guards against the fill-timing error: every reconstructed fill must be priced
-# at a market event the strategy could actually have acted on. a bar's mid_close
-# comes from the last event inside its final minute, and that is only knowable
-# once the minute has elapsed, so a bar-boundary fill must occur at or after
-# label + 60s. clock-cap exits fire on the wall clock and are exempt.
+# fill-timing check: bar-boundary fills must price at or after label + 60s
+# clock-cap exits fire on the wall clock, exempt
 
 import sys
 from collections import defaultdict
@@ -16,7 +13,7 @@ from strategy import (
 )
 from fill_sim import load_tbbo_day, decision_pos, leg_time, CAP
 
-SAMPLE_EVERY = 7      # sample days; the invariant is structural, not statistical
+SAMPLE_EVERY = 7      # day stride, invariant is structural not statistical
 
 
 def main():

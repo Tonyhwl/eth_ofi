@@ -6,7 +6,7 @@ import numpy as np
 
 
 def bars_per_year(index):
-    """Bar density per year inferred from a datetime index."""
+    """bar density per year from a datetime index"""
 
     years = (index.max() - index.min()).total_seconds() / (365.25 * 86400)
     if years <= 0:
@@ -15,7 +15,7 @@ def bars_per_year(index):
 
 
 def sharpe(pnl):
-    """Annualized Sharpe ratio of a per-bar pnl series."""
+    """annualised sharpe"""
 
     p = pnl.dropna()
     if len(p) < 30 or p.std() == 0:
@@ -27,7 +27,7 @@ def sharpe(pnl):
 
 
 def sortino(pnl):
-    """Annualized Sortino ratio using downside deviation only."""
+    """annualised sortino, downside deviation only"""
 
     p = pnl.dropna()
     if len(p) < 30:
@@ -43,7 +43,7 @@ def sortino(pnl):
 
 
 def cagr(pnl, capital):
-    """Compound annual growth rate as a fraction of starting capital."""
+    """cagr as a fraction of starting capital"""
 
     p = pnl.dropna()
     years = (p.index.max() - p.index.min()).total_seconds() / (365.25 * 86400)
@@ -54,7 +54,7 @@ def cagr(pnl, capital):
 
 
 def max_drawdown(pnl, capital):
-    """Largest peak-to-trough loss as a fraction of starting capital."""
+    """peak-to-trough loss as a fraction of capital"""
 
     cumulative = pnl.dropna().cumsum()
     if len(cumulative) == 0:
@@ -63,7 +63,7 @@ def max_drawdown(pnl, capital):
 
 
 def calmar(pnl, capital):
-    """Compound annual growth rate divided by absolute max drawdown."""
+    """cagr over abs max drawdown"""
 
     growth = cagr(pnl, capital)
     drawdown = max_drawdown(pnl, capital)
