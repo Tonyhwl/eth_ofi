@@ -55,7 +55,7 @@ Shape and state dependence:
 |-----------------------|---------------------------------------------------------------|
 | `panel.py`            | per-minute OFI panel from the raw TBBO event stream           |
 | `panel_sub.py`        | ten-second OFI panel, out-of-sample window, same construction |
-| `robust.py`           | `rebuild_vbars_is_only` builds the IS-calibrated bar panel    |
+| `build_bars.py`       | IS-calibrated dollar-volume bar panel                         |
 | `signal_impact.py`    | the price-impact regression, Newey-West HAC                   |
 | `bar_scale.py`        | sweep 1 to 100 bars per day                                   |
 | `bar_scale_ext.py`    | sweep 150 to 1,000 bars per day, one-minute floor diagnostic  |
@@ -64,25 +64,11 @@ Shape and state dependence:
 | `impact_shape.py`     | power-law exponent, sign asymmetry, spread terciles           |
 | `spread_vol.py`       | spread effect against the volatility confound                 |
 | `bar_scale_plot.py`   | figure 2 and the quarterly R2 heatmap                         |
-| `plots.py`            | `fig5_impact` draws figure 1                                  |
+| `plots.py`            | figure 1                                                      |
 | `minute_regression.py`| the regression at minute resolution                           |
-| `decay.py`, `decay_plot.py`, `decay_robustness.py` | forward impact profile after signal events, not in the paper |
 | `../shared/ofi.py`    | event OFI and front-month selection                           |
-| `../shared/bars.py`   | dollar-volume bar construction                                |
 
 Every number in the paper is written by one of these scripts to `results/`.
-
-## Retired strategy code
-
-An earlier version of this repository presented a momentum strategy on the
-same signal. Its execution simulation priced entries before the bar that
-generated them was complete, so its performance figures were not valid. The
-strategy was retired and the paper rewritten around the impact measurement.
-The code stays for the record: `strategy.py`, `engine.py`, `fill_sim.py`,
-`walkforward.py`, `grid_sensitivity.py`, `joint_is.py`, `cost_sensitivity.py`,
-`cap_sensitivity.py`, `capacity.py`, `sizing.py`, `placebo.py`,
-`test_engine_golden.py`, `test_fill_timing.py`, `archive/tick_fill_sim.py`.
-Nothing in the paper depends on them.
 
 ## Run
 
@@ -90,7 +76,7 @@ Nothing in the paper depends on them.
 pip install numpy pandas scipy matplotlib databento
 
 python panel.py            # raw TBBO -> per-minute panel
-python robust.py           # per-minute panel -> IS-calibrated bars
+python build_bars.py       # per-minute panel -> IS-calibrated bars
 python signal_impact.py    # table 1
 python bar_scale.py        # 1 to 100 bars per day
 python bar_scale_ext.py    # 150 to 1,000 bars per day
@@ -100,7 +86,7 @@ python halfhour_r2.py      # Cont et al. design-matched R2
 python impact_shape.py     # concavity, symmetry, spread terciles
 python spread_vol.py       # volatility confound
 python bar_scale_plot.py   # figure 2
-python -c "import plots; plots.fig5_impact()"   # figure 1
+python plots.py            # figure 1
 ```
 
 ## Data
